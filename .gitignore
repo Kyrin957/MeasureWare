@@ -1,0 +1,4 @@
+.venv/          # 虚拟环境文件夹
+__pycache__/    # Python 缓存
+*.pyc
+.vscode/        #VScode个人配置
