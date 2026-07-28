@@ -1,6 +1,9 @@
 """MeasurementController: state machine coordinating device worker, DB, and GUI.
 
 States: IDLE -> READY -> RUNNING -> COMPLETING -> IDLE (or ERROR)
+
+Database writes are handled by the worker thread; the controller only
+forwards signals between the worker and GUI, keeping the event loop free.
 """
 
 import logging
@@ -12,6 +15,7 @@ from PySide6.QtCore import QObject, Signal, Slot, QThread
 from models.database import Session
 from models.measurement import MeasurementSession, MeasurementPoint
 from models.baseline import ProductBaseline
+from utils.datasheet_writer import save_session_to_datasheet
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +32,7 @@ class MeasurementController(QObject):
     """Orchestrates the measurement workflow."""
 
     # Signals for GUI
-    point_data_ready = Signal(int, float, float)       # index, value, x_pos
+    point_data_ready = Signal(int, float)  # index, value
     session_completed = Signal(dict)                    # session summary
     state_changed = Signal(str)                         # new state name
     log_message = Signal(str, int)                      # log
@@ -66,26 +70,28 @@ class MeasurementController(QObject):
         old_state = self._state
         self._state = new_state
         self.state_changed.emit(new_state.name)
-        logger.debug(f"State: {old_state.name} -> {new_state.name}")
+        logger.debug(f"状态变更: {old_state.name} -> {new_state.name}")
 
     # ------------------------------------------------------------------
     # Session preparation
     # ------------------------------------------------------------------
 
     def prepare_session(self, batch_number: str, product_name: str,
-                        inspection_sequence: str = "",
-                        target_count: int = 200) -> int | None:
+                        inspection_sequence: str = "") -> int | None:
         """Validate inputs and create a MeasurementSession in the DB.
+
+        Runs on the main thread but is a single lightweight query+insert;
+        the heavy per-point writes happen on the worker thread.
 
         Returns:
             Session ID if successful, None on validation failure.
         """
         # Validate
         if not batch_number.strip():
-            self.log_message.emit("请输入批号 (Batch number is required)", logging.WARNING)
+            self.log_message.emit("请输入批号", logging.WARNING)
             return None
         if not product_name.strip():
-            self.log_message.emit("请输入品名 (Product name is required)", logging.WARNING)
+            self.log_message.emit("请输入品名", logging.WARNING)
             return None
 
         session_db = Session()
@@ -113,9 +119,9 @@ class MeasurementController(QObject):
             self._current_session_id = session_id
 
             self.log_message.emit(
-                f"Session #{session_id} created: batch={batch_number}, "
-                f"product={product_name}"
-                + (f", baseline={baseline.baseline_value}" if baseline else ", no baseline"),
+                f"测量任务 #{session_id} 已创建: 批号={batch_number}, "
+                f"品名={product_name}"
+                + (f", 基准值={baseline.baseline_value}" if baseline else ", 无基准值"),
                 logging.INFO
             )
 
@@ -124,7 +130,7 @@ class MeasurementController(QObject):
 
         except Exception as e:
             session_db.rollback()
-            logger.exception(f"Failed to create session: {e}")
+            logger.exception(f"创建测量任务失败: {e}")
             self.log_message.emit(f"创建测量任务失败: {e}", logging.ERROR)
             return None
         finally:
@@ -134,14 +140,14 @@ class MeasurementController(QObject):
     # Start acquisition
     # ------------------------------------------------------------------
 
-    def start_acquisition(self, target_count: int = 200):
+    def start_acquisition(self):
         """Launch the measurement worker on a background thread."""
         if self._state not in (MeasurementState.READY, MeasurementState.IDLE):
-            self.log_message.emit("Measurement already in progress", logging.WARNING)
+            self.log_message.emit("测量已在进行中", logging.WARNING)
             return
 
         if self._current_session_id is None:
-            self.log_message.emit("No session prepared", logging.WARNING)
+            self.log_message.emit("未准备测量任务", logging.WARNING)
             return
 
         # Select worker type
@@ -162,9 +168,20 @@ class MeasurementController(QObject):
         # Move worker to thread
         self._worker.moveToThread(self._thread)
 
-        # Connect worker signals
+        # Store parameters on the worker so run() can be parameterless.
+        # This is necessary because we must connect QThread.started
+        # directly to worker.run (signal-to-slot), NOT through a lambda.
+        # A lambda would execute on the main thread due to Qt's
+        # AutoConnection cross-thread queuing, blocking the UI.
+        self._worker._session_id = self._current_session_id
+        self._worker._extraction_config = extraction_cfg
+        self._worker._ethernet_config = ethernet_cfg
+
+        # Connect worker signals — point_acquired is forwarded to UI only
+        # (DB writes happen on the worker thread via _handle_point)
         self._worker.point_acquired.connect(self._on_point_acquired)
         self._worker.measurement_finished.connect(self._on_measurement_finished)
+        self._worker.measurement_completed.connect(self._on_measurement_completed)
         self._worker.connection_established.connect(
             lambda: self.log_message.emit("设备已连接", logging.INFO)
         )
@@ -174,13 +191,11 @@ class MeasurementController(QObject):
         self._worker.error_occurred.connect(self._on_error)
         self._worker.log_message.connect(self.log_message.emit)
 
-        # Thread lifecycle
-        self._thread.started.connect(
-            lambda: self._worker.run(
-                self._current_session_id, target_count,
-                extraction_cfg, ethernet_cfg
-            )
-        )
+        # Thread lifecycle — connect started directly to worker.run.
+        # Since both the QThread's internal thread and the worker
+        # (moved via moveToThread) share the same thread affinity,
+        # Qt uses DirectConnection → run() executes on the WORKER thread.
+        self._thread.started.connect(self._worker.run)
         self._worker.measurement_finished.connect(self._thread.quit)
         self._worker.measurement_finished.connect(self._worker.deleteLater)
         self._thread.finished.connect(self._thread.deleteLater)
@@ -190,8 +205,7 @@ class MeasurementController(QObject):
         self._set_state(MeasurementState.RUNNING)
         self._thread.start()
         self.log_message.emit(
-            f"开始测量: 目标 {target_count} 个点位 "
-            f"({'仿真模式' if self._use_simulation else '实机模式'})",
+            f"开始测量 ({'仿真模式' if self._use_simulation else '实机模式'})",
             logging.INFO
         )
 
@@ -206,92 +220,77 @@ class MeasurementController(QObject):
             self.log_message.emit("正在停止测量...", logging.INFO)
 
     # ------------------------------------------------------------------
-    # Point handling
+    # Point handling  (main thread — lightweight, no DB work)
     # ------------------------------------------------------------------
 
-    @Slot(int, float, float)
-    def _on_point_acquired(self, point_index: int, value: float, x_position: float):
-        """Handle a new measurement point from the worker."""
-        # Store to DB
-        session_db = Session()
-        try:
-            point = MeasurementPoint(
-                session_id=self._current_session_id,
-                point_index=point_index,
-                x_position=x_position,
-                measured_value=value,
-                created_at=datetime.now(),
-            )
-            session_db.add(point)
-            session_db.commit()
-        except Exception as e:
-            session_db.rollback()
-            logger.exception(f"Failed to store point {point_index}: {e}")
-        finally:
-            session_db.close()
+    @Slot(int, float)
+    def _on_point_acquired(self, point_index: int, value: float):
+        """Forward a measurement point to the GUI.
 
-        # Forward to GUI
-        self.point_data_ready.emit(point_index, value, x_position)
+        DB storage is handled by the worker on its thread.
+        """
+        self.point_data_ready.emit(point_index, value)
 
     # ------------------------------------------------------------------
-    # Completion
+    # Completion  (main thread — lightweight, no DB work)
     # ------------------------------------------------------------------
 
     @Slot()
     def _on_measurement_finished(self):
-        """Handle measurement completion — compute max, judgment."""
+        """The worker thread loop has exited — begin completion."""
         self._set_state(MeasurementState.COMPLETING)
 
-        session_db = Session()
+    @Slot(dict)
+    def _on_measurement_completed(self, summary: dict):
+        """Handle measurement completion — summary already computed by worker."""
+        point_count = summary.get("point_count", 0)
+        max_val = summary.get("max_measured_value", "N/A")
+        judgment = summary.get("judgment", "N/A")
+
+        self.log_message.emit(
+            f"测量完成: 共 {point_count} 个点位, "
+            f"最大值={max_val}, 判定={judgment}",
+            logging.INFO
+        )
+
+        self.session_completed.emit(summary)
+        self._set_state(MeasurementState.IDLE)
+
+        # Auto-save to local datasheets folder (non-blocking, lightweight DB read)
+        self._save_datasheet(summary)
+
+    # ------------------------------------------------------------------
+    # Datasheet auto-save
+    # ------------------------------------------------------------------
+
+    def _save_datasheet(self, summary: dict):
+        """Persist completed session data to the local datasheets folder.
+
+        The CSV is written under ``datasheets/YYYY/MM/<batch_number>.csv``.
+        Failure to save does **not** affect the measurement workflow — errors
+        are logged and silently ignored.
+        """
         try:
-            session = session_db.query(MeasurementSession).get(
-                self._current_session_id
-            )
-            if session is None:
-                logger.error(f"Session {self._current_session_id} not found")
+            session_id = summary.get("id")
+            if session_id is None:
                 return
 
-            # Count points
-            point_count = session_db.query(MeasurementPoint).filter_by(
-                session_id=self._current_session_id
-            ).count()
-            session.point_count = point_count
+            points = self.get_session_points(session_id)
+            if not points:
+                logger.debug("Session #%d has no points — skipping datasheet save",
+                             session_id)
+                return
 
-            # Compute max value
-            from sqlalchemy import func
-            max_result = session_db.query(
-                func.max(MeasurementPoint.measured_value)
-            ).filter_by(
-                session_id=self._current_session_id
-            ).scalar()
-
-            if max_result is not None:
-                session.max_measured_value = round(max_result, 6)
-
-            # Compute judgment
-            session.compute_judgment()
-            session.completed_at = datetime.now()
-
-            session_db.commit()
-
-            summary = session.to_summary_dict()
-            self.log_message.emit(
-                f"测量完成: 共 {point_count} 个点位, "
-                f"最大值={session.max_measured_value}, "
-                f"判定={session.judgment}",
-                logging.INFO
-            )
-
-            self.session_completed.emit(summary)
-
-        except Exception as e:
-            session_db.rollback()
-            logger.exception(f"Failed to finalize session: {e}")
-            self.log_message.emit(f"完成测量处理失败: {e}", logging.ERROR)
-        finally:
-            session_db.close()
-
-        self._set_state(MeasurementState.IDLE)
+            from datetime import datetime
+            filepath = save_session_to_datasheet(summary, points, datetime.now())
+            if filepath:
+                self.log_message.emit(
+                    f"测量数据已自动保存到: {filepath}",
+                    logging.INFO,
+                )
+        except Exception:
+            logger.exception("自动保存数据表失败 (session #%s)",
+                             summary.get("id"))
 
     # ------------------------------------------------------------------
     # Error handling
@@ -306,7 +305,7 @@ class MeasurementController(QObject):
         self._set_state(MeasurementState.IDLE)
 
     # ------------------------------------------------------------------
-    # Point editing (from table)
+    # Point editing (from table)  — on-demand, not in hot path
     # ------------------------------------------------------------------
 
     def update_point_value(self, session_id: int, point_index: int,
@@ -348,7 +347,7 @@ class MeasurementController(QObject):
 
         except Exception as e:
             session_db.rollback()
-            logger.exception(f"Failed to update point {point_index}: {e}")
+            logger.exception(f"更新点位 {point_index} 失败: {e}")
             return None
         finally:
             session_db.close()

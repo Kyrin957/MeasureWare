@@ -4,7 +4,7 @@ import logging
 
 from PySide6.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout,
                                QLabel, QLineEdit, QPushButton,
-                               QSpinBox, QComboBox, QGroupBox, QFileDialog,
+                               QComboBox, QGroupBox, QFileDialog,
                                QMessageBox)
 from PySide6.QtCore import Signal, Slot
 
@@ -17,7 +17,7 @@ class JobInfoPanel(QGroupBox):
     """Top panel for entering job info and controlling measurement."""
 
     # Signals
-    start_requested = Signal(str, str, str, int)  # batch, product, seq, target_count
+    start_requested = Signal(str, str, str)  # batch, product, seq
     stop_requested = Signal()
     export_requested = Signal(str)                 # filepath
     log_message = Signal(str, int)
@@ -55,15 +55,6 @@ class JobInfoPanel(QGroupBox):
         self._seq_edit.setPlaceholderText("可选")
         self._seq_edit.setMaximumWidth(80)
         input_row.addWidget(self._seq_edit)
-
-        # Target count
-        input_row.addWidget(QLabel("目标点数:"))
-        self._target_spin = QSpinBox()
-        self._target_spin.setRange(10, 2000)
-        self._target_spin.setValue(200)
-        self._target_spin.setSuffix(" 点")
-        self._target_spin.setMaximumWidth(100)
-        input_row.addWidget(self._target_spin)
 
         main_layout.addLayout(input_row)
 
@@ -115,8 +106,6 @@ class JobInfoPanel(QGroupBox):
         batch = self._batch_edit.text().strip()
         product = self._product_combo.currentText().strip()
         seq = self._seq_edit.text().strip()
-        target = self._target_spin.value()
-
         if not batch:
             QMessageBox.warning(self, "输入验证", "请输入批号")
             return
@@ -124,7 +113,7 @@ class JobInfoPanel(QGroupBox):
             QMessageBox.warning(self, "输入验证", "请输入品名")
             return
 
-        self.start_requested.emit(batch, product, seq, target)
+        self.start_requested.emit(batch, product, seq)
 
     @Slot()
     def _on_stop_clicked(self):
@@ -145,24 +134,12 @@ class JobInfoPanel(QGroupBox):
         is_idle = state_name in ("IDLE", "ERROR")
         self._update_button_states(is_idle)
 
-        state_labels = {
-            "IDLE": "就绪",
-            "READY": "已准备",
-            "RUNNING": "测量中...",
-            "COMPLETING": "处理中...",
-            "ERROR": "错误",
-        }
-        self._status_label.setText(
-            f"状态: {state_labels.get(state_name, state_name)}"
-        )
-
     def _update_button_states(self, is_idle: bool):
         self._start_btn.setEnabled(is_idle)
         self._stop_btn.setEnabled(not is_idle)
         self._batch_edit.setEnabled(is_idle)
         self._product_combo.setEnabled(is_idle)
         self._seq_edit.setEnabled(is_idle)
-        self._target_spin.setEnabled(is_idle)
 
     # ------------------------------------------------------------------
     # Product list

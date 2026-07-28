@@ -28,16 +28,16 @@ class DeviceController:
         res = LJXAwrap.LJX8IF_EthernetOpen(self._device_id, ethernet_config)
         if res == 0:
             self._connected = True
-            logger.info(f"Connected to LJ-X8000 (device_id={self._device_id})")
+            logger.info(f"已连接 LJ-X8000 (设备ID={self._device_id})")
         else:
-            logger.error(f"Failed to connect: return code 0x{res:08X}")
+            logger.error(f"连接失败: 返回码 0x{res:08X}")
         return res
 
     def close_connection(self) -> int:
         """Close Ethernet connection."""
         res = LJXAwrap.LJX8IF_CommunicationClose(self._device_id)
         self._connected = False
-        logger.info("Connection closed")
+        logger.info("连接已关闭")
         return res
 
     @property
@@ -52,23 +52,23 @@ class DeviceController:
         """Start measurement (continuous triggering)."""
         res = LJXAwrap.LJX8IF_StartMeasure(self._device_id)
         if res == 0:
-            logger.info("Measurement started")
+            logger.info("测量已开始")
         else:
-            logger.error(f"StartMeasure failed: 0x{res:08X}")
+            logger.error(f"启动测量失败: 0x{res:08X}")
         return res
 
     def stop_measurement(self) -> int:
         """Stop measurement."""
         res = LJXAwrap.LJX8IF_StopMeasure(self._device_id)
         if res == 0:
-            logger.info("Measurement stopped")
+            logger.info("测量已停止")
         return res
 
     def clear_memory(self) -> int:
         """Clear controller's internal profile memory."""
         res = LJXAwrap.LJX8IF_ClearMemory(self._device_id)
         if res == 0:
-            logger.debug("Controller memory cleared")
+            logger.debug("控制器内存已清除")
         return res
 
     # ------------------------------------------------------------------
@@ -133,5 +133,5 @@ class DeviceController:
                 info["controller_serial"] = ctrl_serial.value.decode("utf-8", errors="replace")
                 info["head_serial"] = head_serial.value.decode("utf-8", errors="replace")
         except Exception as e:
-            logger.warning(f"Could not read device info: {e}")
+            logger.warning(f"无法读取设备信息: {e}")
         return info

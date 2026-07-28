@@ -24,7 +24,7 @@ class AppSettings:
             cfg = DeviceConfig()
             self._session.add(cfg)
             self._session.commit()
-            logger.info("Created default DeviceConfig")
+            logger.info("已创建默认设备配置")
         return cfg
 
     # ---- IP Address ----
@@ -39,7 +39,7 @@ class AppSettings:
         cfg = self._get_config()
         cfg.set_ip(value)
         self._session.commit()
-        logger.info(f"IP address set to {cfg.ip_address}")
+        logger.info(f"IP地址已设置为 {cfg.ip_address}")
 
     @property
     def ip_address(self) -> str:
@@ -131,4 +131,4 @@ class AppSettings:
         cfg.extraction_roi_start = roi_start
         cfg.extraction_roi_end = roi_end
         self._session.commit()
-        logger.info("Device config saved")
+        logger.info("设备配置已保存")

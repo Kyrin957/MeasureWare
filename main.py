@@ -30,12 +30,12 @@ def main():
         with open(style_path, "r", encoding="utf-8") as f:
             app.setStyleSheet(f.read())
 
+    # Setup logging FIRST — must happen before any logger calls
+    log_emitter = setup_logging()
+
     # Initialize database
     init_db()
-    logger.info("Database initialized")
-
-    # Setup logging (returns emitter for GUI connection)
-    log_emitter = setup_logging()
+    logger.info("数据库初始化完成")
 
     # Load settings
     settings = AppSettings()
@@ -46,7 +46,7 @@ def main():
     window = MainWindow(settings, log_emitter)
     window.show()
 
-    logger.info("Application started")
+    logger.info("应用程序已启动")
     sys.exit(app.exec())
 
 

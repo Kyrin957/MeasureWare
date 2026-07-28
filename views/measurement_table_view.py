@@ -14,17 +14,17 @@ logger = logging.getLogger(__name__)
 class MeasurementTableModel(QAbstractTableModel):
     """Table model for measurement point data.
 
-    Columns: Point Index | X Position (mm) | Measured Value (mm)
-    Column 2 (Measured Value) is editable.
+    Columns: Point Index | Measured Value (mm)
+    Column 1 (Measured Value) is editable.
     """
 
-    COLUMNS = ["点位序号", "X位置 (mm)", "测量值 (mm)"]
+    COLUMNS = ["点位序号", "测量值 (mm)"]
 
     point_edited = Signal(int, float)  # point_index, new_value
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._points: list[dict] = []  # [{point_index, x_position, measured_value}, ...]
+        self._points: list[dict] = []  # [{point_index, measured_value}, ...]
 
     def rowCount(self, parent=QModelIndex()) -> int:
         return len(self._points)
@@ -51,16 +51,16 @@ class MeasurementTableModel(QAbstractTableModel):
             if col == 0:
                 return point["point_index"]
             elif col == 1:
-                x = point.get("x_position")
-                return f"{x:.4f}" if x is not None else "--"
-            elif col == 2:
-                return f"{point['measured_value']:.4f}"
+                return f"{point['measured_value']:.3f}"
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return int(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            if col == 0:
+                return int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            else:
+                return int(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
 
         elif role == Qt.ItemDataRole.ForegroundRole:
-            if col == 2:
+            if col == 1:
                 val = point.get("measured_value", 0)
                 if val < 0:
                     return QColor("#F44336")
@@ -71,8 +71,8 @@ class MeasurementTableModel(QAbstractTableModel):
         if not index.isValid() or role != Qt.ItemDataRole.EditRole:
             return False
 
-        if index.column() != 2:
-            return False  # Only column 2 is editable
+        if index.column() != 1:
+            return False  # Only column 1 is editable
 
         try:
             new_value = float(value)
@@ -89,19 +89,18 @@ class MeasurementTableModel(QAbstractTableModel):
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
         flags = super().flags(index)
-        if index.column() == 2:  # Measured value column
+        if index.column() == 1:  # Measured value column
             flags |= Qt.ItemFlag.ItemIsEditable
         return flags
 
     # ---- Public API ----
 
-    def append_point(self, point_index: int, x_position: float, measured_value: float):
+    def append_point(self, point_index: int, measured_value: float):
         """Append a new point row."""
         row = len(self._points)
         self.beginInsertRows(QModelIndex(), row, row)
         self._points.append({
             "point_index": point_index,
-            "x_position": x_position,
             "measured_value": measured_value,
         })
         self.endInsertRows()
@@ -111,7 +110,6 @@ class MeasurementTableModel(QAbstractTableModel):
         self.beginResetModel()
         self._points = [{
             "point_index": p.get("point_index", 0),
-            "x_position": p.get("x_position"),
             "measured_value": p.get("measured_value", 0),
         } for p in points]
         self.endResetModel()
@@ -141,10 +139,14 @@ class MeasurementTableModel(QAbstractTableModel):
 class MeasurementTableWidget(QWidget):
     """Table view widget for measurement data."""
 
+    SCROLL_THROTTLE = 50          # scroll to bottom at most every N points
+    SCROLL_EARLY_LIMIT = 100      # always scroll for the first N points
+
     point_edited = Signal(int, float)  # point_index, new_value
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._point_count = 0
         self._setup_ui()
 
     def _setup_ui(self):
@@ -177,19 +179,21 @@ class MeasurementTableWidget(QWidget):
         # Header sizing
         header = self._table_view.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
 
         layout.addWidget(self._table_view)
 
     # ---- Public API ----
 
-    @Slot(int, float, float)
-    def add_point(self, point_index: int, value: float, x_position: float):
+    @Slot(int, float)
+    def add_point(self, point_index: int, value: float):
         """Append a new measurement point row."""
-        self._model.append_point(point_index, x_position, value)
-        # Auto-scroll to bottom
-        self._table_view.scrollToBottom()
+        self._model.append_point(point_index, value)
+        self._point_count += 1
+        # Throttle scroll — constant layout recalculation is expensive
+        if (self._point_count <= self.SCROLL_EARLY_LIMIT
+                or self._point_count % self.SCROLL_THROTTLE == 0):
+            self._table_view.scrollToBottom()
 
     def load_points(self, points: list[dict]):
         """Load points from a list of dicts."""
@@ -198,6 +202,7 @@ class MeasurementTableWidget(QWidget):
     def clear(self):
         """Clear all rows."""
         self._model.clear()
+        self._point_count = 0
 
     def get_model(self) -> MeasurementTableModel:
         return self._model

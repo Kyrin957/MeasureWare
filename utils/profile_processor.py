@@ -10,8 +10,7 @@ INVALID_Z_SENTINEL = -2147483645
 
 
 def extract_max_z(profdata, data_count: int, header_size_bytes: int,
-                  roi_start: int, roi_end: int,
-                  x_start_um: int, x_pitch_um: int) -> tuple:
+                  roi_start: int, roi_end: int) -> float | None:
     """Extract the maximum Z height value within the ROI.
 
     Args:
@@ -20,11 +19,9 @@ def extract_max_z(profdata, data_count: int, header_size_bytes: int,
         header_size_bytes: Byte size of LJX8IF_PROFILE_HEADER (offset to heights).
         roi_start: Start X index of the region of interest.
         roi_end: End X index of the region of interest (inclusive).
-        x_start_um: X start position in 0.01 µm (from profinfo.lXStart).
-        x_pitch_um: X pitch in 0.01 µm (from profinfo.lXPitch).
 
     Returns:
-        (max_z_mm, max_x_mm) tuple. Returns (None, None) if all values invalid.
+        max_z_mm float, or None if all values invalid.
     """
     int_size = ctypes.sizeof(ctypes.c_int)
     offset = header_size_bytes // int_size
@@ -33,11 +30,10 @@ def extract_max_z(profdata, data_count: int, header_size_bytes: int,
     roi_end = min(data_count - 1, roi_end)
 
     if roi_start > roi_end:
-        logger.warning(f"Invalid ROI: start={roi_start} > end={roi_end}")
-        return (None, None)
+        logger.warning(f"无效的ROI: 起始={roi_start} > 结束={roi_end}")
+        return None
 
     max_z = float('-inf')
-    max_x = 0.0
 
     for i in range(roi_start, roi_end + 1):
         raw_z = profdata[offset + i]
@@ -49,24 +45,20 @@ def extract_max_z(profdata, data_count: int, header_size_bytes: int,
 
         if z_mm > max_z:
             max_z = z_mm
-            # X position in mm
-            x_mm = (x_start_um + x_pitch_um * i) / 100.0 / 1000.0
-            max_x = x_mm
 
     if max_z == float('-inf'):
-        logger.debug("All Z values in ROI were invalid")
-        return (None, None)
+        logger.debug("ROI内所有Z值均无效")
+        return None
 
-    return (round(max_z, 6), round(max_x, 6))
+    return round(max_z, 6)
 
 
 def extract_avg_z(profdata, data_count: int, header_size_bytes: int,
-                  roi_start: int, roi_end: int,
-                  x_start_um: int, x_pitch_um: int) -> tuple:
+                  roi_start: int, roi_end: int) -> float | None:
     """Extract the average Z height value within the ROI.
 
     Returns:
-        (avg_z_mm, center_x_mm). Returns (None, None) if all values invalid.
+        avg_z_mm float, or None if all values invalid.
     """
     int_size = ctypes.sizeof(ctypes.c_int)
     offset = header_size_bytes // int_size
@@ -75,7 +67,7 @@ def extract_avg_z(profdata, data_count: int, header_size_bytes: int,
     roi_end = min(data_count - 1, roi_end)
 
     if roi_start > roi_end:
-        return (None, None)
+        return None
 
     total = 0.0
     count = 0
@@ -88,8 +80,7 @@ def extract_avg_z(profdata, data_count: int, header_size_bytes: int,
         count += 1
 
     if count == 0:
-        return (None, None)
+        return None
 
     avg_z = total / count
-    center_x = (x_start_um + x_pitch_um * (roi_start + roi_end) // 2) / 100.0 / 1000.0
-    return (round(avg_z, 6), round(center_x, 6))
+    return round(avg_z, 6)

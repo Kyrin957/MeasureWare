@@ -17,6 +17,8 @@ class MeasurementChartView(QWidget):
         super().__init__(parent)
         self._setup_ui()
         self._all_values = []  # Store (index, value) for max tracking
+        self._min_y = float("inf")
+        self._max_y = -float("inf")
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -75,10 +77,20 @@ class MeasurementChartView(QWidget):
         self._chart_view.setRenderHint(QPainter.RenderHint.Antialiasing)
         layout.addWidget(self._chart_view)
 
-    @Slot(int, float, float)
-    def add_point(self, point_index: int, value: float, x_position: float):
+        # Track value range incrementally — avoids O(n) scan on every point
+        self._min_y = float("inf")
+        self._max_y = -float("inf")
+
+    @Slot(int, float)
+    def add_point(self, point_index: int, value: float):
         """Add a new measurement point to the chart."""
         self._all_values.append((point_index, value))
+
+        # Update running min/max (O(1) instead of O(n) scan)
+        if value < self._min_y:
+            self._min_y = value
+        if value > self._max_y:
+            self._max_y = value
 
         # Append to line series
         self._line_series.append(float(point_index), value)
@@ -91,13 +103,14 @@ class MeasurementChartView(QWidget):
         if point_index > self._axis_x.max():
             self._axis_x.setRange(0, point_index + 50)
 
-        # Adjust Y axis range if needed
-        y_min, y_max = self._get_y_range()
-        if value > self._axis_y.max() or value < self._axis_y.min():
-            margin = max((y_max - y_min) * 0.1, 0.1)
+        # Adjust Y axis range if the new point pushes beyond current bounds
+        y_lo = self._axis_y.min()
+        y_hi = self._axis_y.max()
+        if value < y_lo or value > y_hi:
+            margin = max((self._max_y - self._min_y) * 0.1, 0.1)
             self._axis_y.setRange(
-                max(0, y_min - margin),
-                y_max + margin
+                max(0, self._min_y - margin),
+                self._max_y + margin
             )
 
     @Slot(float, float)
@@ -115,10 +128,5 @@ class MeasurementChartView(QWidget):
         self._all_values.clear()
         self._axis_x.setRange(0, 200)
         self._axis_y.setRange(0, 10)
-
-    def _get_y_range(self) -> tuple:
-        """Get the min/max Y values from stored data."""
-        if not self._all_values:
-            return (0.0, 10.0)
-        values = [v for _, v in self._all_values]
-        return (min(values), max(values))
+        self._min_y = float("inf")
+        self._max_y = -float("inf")

@@ -47,14 +47,17 @@ class BaselineTableModel(QAbstractTableModel):
             if col == 0:
                 return item.get("product_name", "")
             elif col == 1:
-                return f"{item.get('baseline_value', 0):.4f}"
+                return f"{item.get('baseline_value', 0):.3f}"
             elif col == 2:
-                return f"{item.get('tolerance_upper', 0):.4f}"
+                return f"{item.get('tolerance_upper', 0):.3f}"
             elif col == 3:
-                return f"{item.get('tolerance_lower', 0):.4f}"
+                return f"{item.get('tolerance_lower', 0):.3f}"
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return int(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            if col == 0:
+                return int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            else:
+                return int(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
 
         return None
 

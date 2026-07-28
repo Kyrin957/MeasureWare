@@ -45,7 +45,7 @@ class MeasurementSession(Base):
         tol_upper = self.tolerance_upper or 0.0
         tol_lower = self.tolerance_lower or 0.0
 
-        if -tol_lower <= diff <= tol_upper:
+        if tol_lower <= diff <= tol_upper:
             self.judgment = "OK"
         else:
             self.judgment = "NG"
@@ -79,7 +79,6 @@ class MeasurementPoint(Base):
     session_id = Column(Integer, ForeignKey("measurement_sessions.id"),
                         nullable=False)
     point_index = Column(Integer, nullable=False)
-    x_position = Column(Float, nullable=True)
     measured_value = Column(Float, nullable=False)
     created_at = Column(DateTime, default=datetime.now)
 
@@ -90,7 +89,6 @@ class MeasurementPoint(Base):
             "id": self.id,
             "session_id": self.session_id,
             "point_index": self.point_index,
-            "x_position": self.x_position,
             "measured_value": self.measured_value,
             "created_at": self.created_at.isoformat() if self.created_at else "",
         }

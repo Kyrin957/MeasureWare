@@ -162,7 +162,6 @@ MeasureWare/
 | id | INTEGER PK | 自增主键 |
 | session_id | INTEGER FK | 关联 measurement_sessions |
 | point_index | INTEGER | 点位序号 (1-based) |
-| x_position | FLOAT | X 坐标 (mm) |
 | measured_value | FLOAT | 测量值 (mm) |
 
 ## 快速开始

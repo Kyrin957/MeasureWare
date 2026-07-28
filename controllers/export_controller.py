@@ -19,7 +19,7 @@ class ExportController:
         try:
             session = session_db.query(MeasurementSession).get(session_id)
             if session is None:
-                logger.error(f"Session #{session_id} not found")
+                logger.error(f"测量任务 #{session_id} 未找到")
                 return False
 
             points = session_db.query(MeasurementPoint).filter_by(
@@ -34,7 +34,7 @@ class ExportController:
             export_sessions_to_csv(sessions_data, filepath)
             return True
         except Exception as e:
-            logger.exception(f"Export session #{session_id} failed: {e}")
+            logger.exception(f"导出测量任务 #{session_id} 失败: {e}")
             return False
         finally:
             session_db.close()
@@ -61,7 +61,7 @@ class ExportController:
             export_sessions_to_csv(sessions_data, filepath)
             return True
         except Exception as e:
-            logger.exception(f"Export all sessions failed: {e}")
+            logger.exception(f"导出全部测量任务失败: {e}")
             return False
         finally:
             session_db.close()

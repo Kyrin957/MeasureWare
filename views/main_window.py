@@ -41,7 +41,7 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def _setup_ui(self):
-        self.setWindowTitle("封止树脂测量数据监测")
+        self.setWindowTitle("树脂测量数据监测")
         self.resize(1280, 900)
         self.setMinimumSize(1024, 700)
 
@@ -67,8 +67,8 @@ class MainWindow(QMainWindow):
 
         root_layout.addLayout(middle_row, 2)
 
-        # ---- Bottom: Table + Log (splitter) ----
-        splitter = QSplitter(Qt.Orientation.Vertical)
+        # ---- Bottom: Table + Log (horizontal splitter) ----
+        splitter = QSplitter(Qt.Orientation.Horizontal)
 
         self._table_widget = MeasurementTableWidget()
         splitter.addWidget(self._table_widget)
@@ -77,7 +77,7 @@ class MainWindow(QMainWindow):
         splitter.addWidget(self._log_panel)
 
         splitter.setStretchFactor(0, 3)
-        splitter.setStretchFactor(1, 1)
+        splitter.setStretchFactor(1, 7)
         root_layout.addWidget(splitter, 1)
 
         # ---- Menu Bar ----
@@ -133,7 +133,7 @@ class MainWindow(QMainWindow):
         # Controller → panels
         self._measurement_ctrl.point_data_ready.connect(self._chart_view.add_point)
         self._measurement_ctrl.point_data_ready.connect(self._table_widget.add_point)
-        # self._measurement_ctrl.state_changed.connect(self._job_panel.on_state_changed)
+        self._measurement_ctrl.state_changed.connect(self._job_panel.on_state_changed)
         self._measurement_ctrl.state_changed.connect(self._on_state_changed)
         self._measurement_ctrl.log_message.connect(self._log_panel.append_log)
         self._measurement_ctrl.session_completed.connect(
@@ -155,9 +155,8 @@ class MainWindow(QMainWindow):
     # Measurement flow slots
     # ------------------------------------------------------------------
 
-    @Slot(str, str, str, int)
-    def _on_start_measurement(self, batch: str, product: str,
-                              seq: str, target_count: int):
+    @Slot(str, str, str)
+    def _on_start_measurement(self, batch: str, product: str, seq: str):
         """Handle start measurement request from job panel."""
         # Clear previous data
         self._chart_view.reset()
@@ -166,26 +165,21 @@ class MainWindow(QMainWindow):
 
         # Prepare session
         session_id = self._measurement_ctrl.prepare_session(
-            batch, product, seq, target_count
+            batch, product, seq
         )
         if session_id is None:
             return  # Validation failed, message already logged
 
         # Start acquisition
-        self._measurement_ctrl.start_acquisition(target_count)
+        self._measurement_ctrl.start_acquisition()
 
     @Slot(dict)
     def _on_session_completed_chart(self, summary: dict):
         """Update chart with max value marker."""
         max_val = summary.get("max_measured_value")
         if max_val is not None:
-            # Find the point index with max value
-            points = self._measurement_ctrl.get_session_points(summary["id"])
-            max_idx = 0
-            for p in points:
-                if p.get("measured_value") == max_val:
-                    max_idx = p.get("point_index", 0)
-                    break
+            # max_point_index is tracked in-memory by the worker — no DB query needed
+            max_idx = summary.get("max_point_index", 0)
             self._chart_view.mark_max(max_val, max_idx)
 
     @Slot(str)
@@ -230,7 +224,7 @@ class MainWindow(QMainWindow):
                 self._chart_view.mark_max(max_val, max_idx)
 
             self._log_panel.append_log(
-                f"点位 {point_index} 已手动修改为 {new_value:.4f} mm, "
+                f"点位 {point_index} 已手动修改为 {new_value:.3f} mm, "
                 f"判定更新为 {summary.get('judgment', '--')}",
                 logging.INFO
             )
@@ -249,7 +243,7 @@ class MainWindow(QMainWindow):
 
         success = ExportController.export_session(session_id, filepath)
         if success:
-            logger.info(f"Exported session #{session_id} to {filepath}")
+            logger.info(f"已导出测量任务 #{session_id} 到 {filepath}")
             self._log_panel.append_log(f"已导出数据到: {filepath}", logging.INFO)
         else:
             QMessageBox.warning(self, "导出失败", "CSV导出失败，请查看日志")
@@ -280,7 +274,7 @@ class MainWindow(QMainWindow):
         if filepath:
             success = ExportController.export_all(filepath)
             if success:
-                logger.info(f"Exported all sessions to {filepath}")
+                logger.info(f"已导出全部测量任务到 {filepath}")
                 self._log_panel.append_log(f"已导出全部数据到: {filepath}", logging.INFO)
             else:
                 QMessageBox.warning(self, "导出失败", "CSV导出失败，请查看日志")

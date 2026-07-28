@@ -57,11 +57,11 @@ class BaselineController:
             )
             session_db.add(baseline)
             session_db.commit()
-            logger.info(f"Created baseline: {product_name} = {baseline_value}")
+            logger.info(f"已创建基准值: {product_name} = {baseline_value}")
             return (True, f"已添加品名 '{product_name}'")
         except Exception as e:
             session_db.rollback()
-            logger.exception(f"Create baseline failed: {e}")
+            logger.exception(f"创建基准值失败: {e}")
             return (False, f"添加失败: {e}")
         finally:
             session_db.close()
@@ -89,11 +89,11 @@ class BaselineController:
                     setattr(baseline, key, value)
 
             session_db.commit()
-            logger.info(f"Updated baseline #{baseline_id}")
+            logger.info(f"已更新基准值 #{baseline_id}")
             return (True, f"已更新品名 '{baseline.product_name}'")
         except Exception as e:
             session_db.rollback()
-            logger.exception(f"Update baseline failed: {e}")
+            logger.exception(f"更新基准值失败: {e}")
             return (False, f"更新失败: {e}")
         finally:
             session_db.close()
@@ -110,11 +110,11 @@ class BaselineController:
             name = baseline.product_name
             session_db.delete(baseline)
             session_db.commit()
-            logger.info(f"Deleted baseline: {name}")
+            logger.info(f"已删除基准值: {name}")
             return (True, f"已删除品名 '{name}'")
         except Exception as e:
             session_db.rollback()
-            logger.exception(f"Delete baseline failed: {e}")
+            logger.exception(f"删除基准值失败: {e}")
             return (False, f"删除失败: {e}")
         finally:
             session_db.close()
@@ -163,7 +163,7 @@ class BaselineController:
             return (True, "基准值已保存")
         except Exception as e:
             session_db.rollback()
-            logger.exception(f"Batch save baselines failed: {e}")
+            logger.exception(f"批量保存基准值失败: {e}")
             return (False, f"保存失败: {e}")
         finally:
             session_db.close()
