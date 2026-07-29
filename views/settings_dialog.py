@@ -55,12 +55,8 @@ class SettingsDialog(QDialog):
         self._cmd_port_spin = QSpinBox()
         self._cmd_port_spin.setRange(1024, 65535)
         self._cmd_port_spin.setValue(24691)
-        ip_form.addRow("命令端口:", self._cmd_port_spin)
-
-        self._hs_port_spin = QSpinBox()
-        self._hs_port_spin.setRange(1024, 65535)
-        self._hs_port_spin.setValue(24692)
-        ip_form.addRow("高速数据端口:", self._hs_port_spin)
+        self._cmd_port_spin.setToolTip("LJ-X8000 无协议输出端口号")
+        ip_form.addRow("数据端口:", self._cmd_port_spin)
 
         ip_group.setLayout(ip_form)
         comm_layout.addWidget(ip_group)
@@ -75,35 +71,6 @@ class SettingsDialog(QDialog):
 
         comm_layout.addStretch()
         tabs.addTab(comm_tab, "通讯设置")
-
-        # ---- Tab 2: Extraction ----
-        extr_tab = QWidget()
-        extr_layout = QVBoxLayout(extr_tab)
-
-        extr_group = QGroupBox("数据提取设置")
-        extr_form = QFormLayout()
-
-        self._extr_mode_combo = QComboBox()
-        self._extr_mode_combo.addItem("最大值 (Max Z)", "max")
-        self._extr_mode_combo.addItem("平均值 (Avg Z)", "avg")
-        extr_form.addRow("提取模式:", self._extr_mode_combo)
-
-        self._roi_start_spin = QSpinBox()
-        self._roi_start_spin.setRange(0, 3199)
-        self._roi_start_spin.setValue(0)
-        extr_form.addRow("ROI 起始 X 索引:", self._roi_start_spin)
-
-        self._roi_end_spin = QSpinBox()
-        self._roi_end_spin.setRange(0, 3199)
-        self._roi_end_spin.setValue(3199)
-        extr_form.addRow("ROI 结束 X 索引:", self._roi_end_spin)
-
-        extr_group.setLayout(extr_form)
-        extr_layout.addWidget(extr_group)
-        extr_layout.addStretch()
-        tabs.addTab(extr_tab, "提取设置")
-
-        layout.addWidget(tabs)
 
         # Buttons
         button_box = QDialogButtonBox(
@@ -123,7 +90,6 @@ class SettingsDialog(QDialog):
             self._ip_spinboxes[i].setValue(octet)
 
         self._cmd_port_spin.setValue(self._settings.command_port)
-        self._hs_port_spin.setValue(self._settings.high_speed_port)
 
         # Extraction
         mode = self._settings.extraction_mode
@@ -140,7 +106,6 @@ class SettingsDialog(QDialog):
         self._settings.save_all(
             ip_octets=octets,
             command_port=self._cmd_port_spin.value(),
-            high_speed_port=self._hs_port_spin.value(),
             extraction_mode=self._extr_mode_combo.currentData(),
             roi_start=self._roi_start_spin.value(),
             roi_end=self._roi_end_spin.value(),
@@ -149,13 +114,33 @@ class SettingsDialog(QDialog):
         self.accept()
 
     def _on_test_connection(self):
-        """Test Ethernet connection to the controller."""
-        QMessageBox.information(
-            self, "测试连接",
-            "测试连接功能需要连接到实际的 LJ-X8000 设备。\n"
-            "如设备未连接，此功能将失败。\n\n"
-            "当前配置:\n"
-            f"IP: {self._ip_spinboxes[0].value()}.{self._ip_spinboxes[1].value()}."
-            f"{self._ip_spinboxes[2].value()}.{self._ip_spinboxes[3].value()}\n"
-            f"端口: {self._cmd_port_spin.value()}"
-        )
+        """Test TCP connection to the LJ-X8000 controller."""
+        import socket
+        ip = f"{self._ip_spinboxes[0].value()}.{self._ip_spinboxes[1].value()}." \
+             f"{self._ip_spinboxes[2].value()}.{self._ip_spinboxes[3].value()}"
+        port = self._cmd_port_spin.value()
+
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(3.0)
+            sock.connect((ip, port))
+            sock.close()
+            QMessageBox.information(
+                self, "测试连接",
+                f"✓ TCP连接成功!\n\n{ip}:{port}"
+            )
+        except socket.timeout:
+            QMessageBox.warning(
+                self, "测试连接",
+                f"✗ 连接超时\n\n{ip}:{port}\n请检查设备IP和端口设置。"
+            )
+        except ConnectionRefusedError:
+            QMessageBox.warning(
+                self, "测试连接",
+                f"✗ 连接被拒绝\n\n{ip}:{port}\n请确认LJ-X8000已开启无协议输出。"
+            )
+        except OSError as e:
+            QMessageBox.warning(
+                self, "测试连接",
+                f"✗ 连接失败\n\n{ip}:{port}\n错误: {e}"
+            )

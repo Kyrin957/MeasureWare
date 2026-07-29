@@ -1,6 +1,5 @@
 """Application settings backed by the DeviceConfig database row."""
 
-import ctypes
 import logging
 
 from models.database import Session
@@ -57,16 +56,6 @@ class AppSettings:
         cfg.command_port = value
         self._session.commit()
 
-    @property
-    def high_speed_port(self) -> int:
-        return self._get_config().high_speed_port
-
-    @high_speed_port.setter
-    def high_speed_port(self, value: int):
-        cfg = self._get_config()
-        cfg.high_speed_port = value
-        self._session.commit()
-
     # ---- Extraction ----
 
     @property
@@ -99,19 +88,13 @@ class AppSettings:
         cfg.extraction_roi_end = value
         self._session.commit()
 
-    # ---- Build LJXAwrap ethernet config ----
+    # ---- Build connection parameters ----
 
     def get_ethernet_config(self):
-        """Return an LJX8IF_ETHERNET_CONFIG ctypes struct ready for LJXAwrap."""
-        import LJXAwrap
+        """Return (ip_address, port) tuple for TCP no-protocol connection."""
         octets = self.ip_octets
-        ethernet_config = LJXAwrap.LJX8IF_ETHERNET_CONFIG()
-        ethernet_config.abyIpAddress[0] = octets[0]
-        ethernet_config.abyIpAddress[1] = octets[1]
-        ethernet_config.abyIpAddress[2] = octets[2]
-        ethernet_config.abyIpAddress[3] = octets[3]
-        ethernet_config.wPortNo = self.command_port
-        return ethernet_config
+        ip_address = f"{octets[0]}.{octets[1]}.{octets[2]}.{octets[3]}"
+        return (ip_address, self.command_port)
 
     def get_extraction_config(self) -> dict:
         cfg = self._get_config()
@@ -121,12 +104,11 @@ class AppSettings:
             "roi_end": cfg.extraction_roi_end,
         }
 
-    def save_all(self, ip_octets, command_port, high_speed_port,
+    def save_all(self, ip_octets, command_port,
                  extraction_mode, roi_start, roi_end):
         cfg = self._get_config()
         cfg.set_ip(ip_octets)
         cfg.command_port = command_port
-        cfg.high_speed_port = high_speed_port
         cfg.extraction_mode = extraction_mode
         cfg.extraction_roi_start = roi_start
         cfg.extraction_roi_end = roi_end

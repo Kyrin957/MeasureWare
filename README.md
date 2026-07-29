@@ -9,7 +9,7 @@
 | GUI 框架 | PySide6 | Qt 官方 Python 绑定，与 QtCharts 无缝集成 |
 | 图表模块 | QtCharts | 原生 GUI 集成、硬件加速渲染、内置交互功能 |
 | 数据库 | SQLite + SQLAlchemy | 轻量级、无需独立服务器，ORM 简化数据操作 |
-| 网络通信 | LJXAwrap.py | 基恩士官方通信库 |
+| 网络通信 | Python socket (TCP 无协议) | 标准库，无需第三方 DLL，被动接收测量数据 |
 | 数据处理 | pandas / numpy | 高效处理批量测量数据 |
 | 架构模式 | MVC | 分离数据、界面与逻辑，提升可维护性 |
 
@@ -18,10 +18,6 @@
 ```
 MeasureWare/
 ├── main.py                              # 应用程序入口
-├── LJX8_IF.dll                          # 基恩士通信 DLL (不修改)
-├── LJXAwrap.py                          # 基恩士官方 Python 封装 (不修改)
-├── sample_HowToCallFunctions.py         # 官方示例 - API 调用参考
-├── sample_ImageAcquisition.py           # 官方示例 - 高速采集参考
 ├── README.md                            # 本文件
 ├── 开发文档.md                           # 开发需求文档
 │
@@ -36,13 +32,13 @@ MeasureWare/
 │   └── measurement.py                   # MeasurementSession / MeasurementPoint
 │
 ├── controllers/                        # 控制器层
-│   ├── device_controller.py            # LJXAwrap 同步封装 (在 Worker 线程运行)
+│   ├── device_controller.py            # TCP socket 客户端 (在 Worker 线程运行)
 │   ├── measurement_controller.py       # 测量状态机：会话生命周期/最大值/判定
 │   ├── baseline_controller.py          # 品名基准值 CRUD
 │   └── export_controller.py            # CSV 导出
 │
 ├── workers/                            # 后台工作线程
-│   ├── device_worker.py                # 真实设备采集循环 (QThread)
+│   ├── device_worker.py                # 实机 TCP 无协议采集循环 (QThread)
 │   └── simulation_worker.py            # 仿真设备 - 离线开发/测试
 │
 ├── views/                              # 视图层 (PySide6 GUI)
@@ -56,7 +52,6 @@ MeasureWare/
 │   └── baseline_dialog.py              # 品名基准值管理对话框
 │
 ├── utils/                              # 工具模块
-│   ├── profile_processor.py            # 从3200点轮廓提取标量值
 │   └── csv_writer.py                   # pandas CSV 导出 (UTF-8-BOM)
 │
 └── resources/                           # 资源文件
@@ -79,11 +74,12 @@ MeasureWare/
                                  │   Worker    │
                                  │ (采集循环)   │
                                  └──────┬──────┘
-                                        │ LJXAwrap
+                                        │ TCP Socket
                                         ▼
                                  ┌─────────────┐
                                  │  LJ-X8000   │
                                  │  控制器     │
+                                 │ (无协议模式) │
                                  └─────────────┘
 ```
 
@@ -95,13 +91,15 @@ MeasureWare/
 - 测量中自动锁定输入控件
 
 ### 2. 设备通信
-- 基于基恩士官方 `LJXAwrap.py` 通信库
-- 支持 Ethernet 连接/断开、测量启停、Profile 单次读取
+- 基于 Python 标准库 `socket` 模块的 TCP 客户端
+- LJ-X8000 工作在**无协议（无协议）模式**，主动发送测量值，PC 端被动接收
+- 数据格式：`±000.512`（带符号的浮点数字符串，单位 mm）
+- 支持 TCP 连接/断开、连接测试
 - 所有通信在 QThread 后台线程执行，不阻塞 GUI
 
 ### 3. 数据采集与存储
-- 采集流程：录入信息 → 点击开始 → 后台轮询 GetProfile → 提取标量值 → 存入数据库
-- 每条产品测量 200-300 个点位（可配置）
+- 采集流程：录入信息 → 点击开始 → TCP 连接 → 等待控制器发送数据 → 解析测量值 → 存入数据库
+- 持续采集直至操作员点击停止测量
 - 所有点位数据持久化到 SQLite，支持查询和 CSV 导出
 
 ### 4. 实时图表
@@ -119,8 +117,8 @@ MeasureWare/
 - 后台 `RotatingFileHandler` 自动轮转写入 `logs/app.log`（5MB × 3 备份）
 
 ### 7. 软件参数配置
-- **通讯设置**：IP 地址（四段）、命令端口、高速数据端口
-- **提取设置**：提取模式（最大值/平均值）、ROI 区域（X 起始/结束索引）
+- **通讯设置**：IP 地址（四段）、数据端口（LJ-X8000 无协议输出端口）
+- **提取设置**：提取模式（最大值/平均值）、ROI 区域（X 起始/结束索引）— 仿真模式使用
 - **品名基准值管理**：增删改查表格，支持行内编辑，品名唯一性校验
 
 ## 数据库设计
@@ -129,11 +127,10 @@ MeasureWare/
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | ip_octet1~4 | INTEGER | 192,168,0,1 | IP 地址四段 |
-| command_port | INTEGER | 24691 | 命令端口 |
-| high_speed_port | INTEGER | 24692 | 高速数据端口 |
-| extraction_mode | VARCHAR | max | 提取模式 |
-| extraction_roi_start | INTEGER | 0 | ROI 起始 X 索引 |
-| extraction_roi_end | INTEGER | 3199 | ROI 结束 X 索引 |
+| command_port | INTEGER | 24691 | TCP 数据端口（无协议输出） |
+| extraction_mode | VARCHAR | max | 提取模式（仿真用） |
+| extraction_roi_start | INTEGER | 0 | ROI 起始 X 索引（仿真用） |
+| extraction_roi_end | INTEGER | 3199 | ROI 结束 X 索引（仿真用） |
 
 ### product_baselines（品名基准值）
 | 字段 | 类型 | 说明 |
@@ -202,14 +199,17 @@ python main.py
 ### 实机模式使用流程
 
 ```
-1. 连接 LJ-X8000 控制器电源和 Ethernet 网线
-2. 确认控制器 IP 地址（默认 192.168.0.1）
-3. 打开软件，在 设置 → 通讯设置 中配置匹配的 IP 和端口
-4. 录入批号、品名等信息
-5. 点击「开始测量」
-6. 软件自动采集 200-300 个点位数据
-7. 查看折线图、数据表和 OK/NG 判定
-8. 点击「导出 CSV」保存数据
+1. 将 LJ-X8000 控制器配置为"无协议"TCP 输出模式
+2. 确认控制器 IP 地址和输出端口号
+3. 连接控制器 Ethernet 网线到 PC
+4. 打开软件，在 设置 → 通讯设置 中配置匹配的 IP 和端口
+5. 点击「测试连接」确认通信正常
+6. 录入批号、品名等信息
+7. 点击「开始测量」
+8. 控制器主动发送测量数据，软件实时接收并展示
+9. 查看折线图、数据表和 OK/NG 判定
+10. 点击「停止测量」结束采集
+11. 点击「导出 CSV」保存数据
 ```
 
 ## 开发说明
@@ -224,12 +224,20 @@ python main.py
 - Worker 线程：设备通信和采集循环
 - 跨线程通信仅使用 Qt 信号/槽（`Signal`/`Slot`），自动排队安全投递
 
-### 关键文件说明
-- `LJXAwrap.py` / `LJX8_IF.dll`：基恩士官方通信库，**请勿修改**
-- `sample_HowToCallFunctions.py`：官方 API 调用示例，包含所有可用函数
-- `sample_ImageAcquisition.py`：高速批量采集示例（图像模式）
-- `workers/simulation_worker.py`：仿真 Worker，与真实 Worker 共享相同的信号接口，可无缝切换
+### 通信方式说明
+- **实机模式**：使用 Python `socket` TCP 客户端，连接 LJ-X8000 无协议输出端口，被动接收 `"±000.512"` 格式的测量值字符串
+- **仿真模式**：使用 `simulation_worker.py` 生成模拟数据，与实机 Worker 共享相同的信号接口，可无缝切换
+- `LJXAwrap.py` / `LJX8_IF.dll` 为基恩士官方通信库，已弃用，仅保留作为参考
+- `sample_HowToCallFunctions.py` / `sample_ImageAcquisition.py` 为官方示例代码，仅保留作为参考
+
+### LJ-X8000 无协议模式配置
+在 LJ-X8000 控制器端需配置以下参数以启用无协议 TCP 输出：
+- 通信协议：无协议 (Non-Procedure)
+- 输出数据：测量值（指定输出程序/输出项目）
+- 数据格式：ASCII，含符号和小数点
+- 分隔符：CR+LF 或 LF
+- TCP 端口：与软件设置中的数据端口一致
 
 ## License
 
-本项目使用基恩士 `LJXAwrap.py` 通信库（Copyright (c) 2021 KEYENCE CORPORATION）。
+本项目为内部使用工具。基恩士 `LJXAwrap.py` 通信库（Copyright (c) 2021 KEYENCE CORPORATION）已不再被应用程序引用，仅保留作为参考。

@@ -1,0 +1,433 @@
+2026-07-29 15:14:59 [INFO   ] config.logging_config: 日志系统初始化完成
+2026-07-29 15:14:59 [INFO   ] __main__: 数据库初始化完成
+2026-07-29 15:15:14 [INFO   ] __main__: 应用程序已启动
+2026-07-29 15:15:14 [INFO   ] GUI: __main__: 应用程序已启动
+2026-07-29 15:15:33 [INFO   ] GUI: 切换到实机模式
+2026-07-29 15:16:08 [INFO   ] config.app_settings: 设备配置已保存
+2026-07-29 15:16:08 [INFO   ] GUI: config.app_settings: 设备配置已保存
+2026-07-29 15:16:10 [INFO   ] GUI: 通讯设置已更新
+2026-07-29 15:16:12 [INFO   ] GUI: 测量任务 #7 已创建: 批号=25456789, 品名=RWD, 基准值=5.0
+2026-07-29 15:16:12 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:16:12 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:16:12 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:16:12 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:16:12 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:16:12 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:16:12 [INFO   ] GUI: 设备已连接
+2026-07-29 15:16:12 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:19:36 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:19:36 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:19:36 [INFO   ] GUI: 用户停止测量，共采集 13 个点位。
+2026-07-29 15:19:36 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:19:36 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:19:36 [INFO   ] GUI: 设备已断开
+2026-07-29 15:19:36 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:19:36 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:19:36 [INFO   ] GUI: 测量完成: 共 13 个点位, 最大值=0.002, 判定=NG
+2026-07-29 15:19:36 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:19:36 [INFO   ] utils.datasheet_writer: 测量数据已保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\25456789.csv
+2026-07-29 15:19:36 [INFO   ] GUI: utils.datasheet_writer: 测量数据已保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\25456789.csv
+2026-07-29 15:19:36 [INFO   ] GUI: 测量数据已自动保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\25456789.csv
+2026-07-29 15:19:36 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:21:42 [INFO   ] GUI: 测量任务 #8 已创建: 批号=25456789, 品名=RWD, 基准值=5.0
+2026-07-29 15:21:42 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:21:43 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:21:43 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:21:43 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:21:43 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:21:43 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:21:43 [INFO   ] GUI: 设备已连接
+2026-07-29 15:21:43 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:23:08 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:23:08 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:23:08 [INFO   ] GUI: 用户停止测量，共采集 14 个点位。
+2026-07-29 15:23:08 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:23:08 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:23:08 [INFO   ] GUI: 设备已断开
+2026-07-29 15:23:08 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:23:08 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:23:08 [INFO   ] GUI: 测量完成: 共 14 个点位, 最大值=5.293, 判定=NG
+2026-07-29 15:23:08 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:23:08 [INFO   ] utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\25456789.csv
+2026-07-29 15:23:08 [INFO   ] GUI: utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\25456789.csv
+2026-07-29 15:23:08 [INFO   ] GUI: 测量数据已自动保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\25456789.csv
+2026-07-29 15:23:08 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:24:22 [INFO   ] config.logging_config: 日志系统初始化完成
+2026-07-29 15:24:22 [INFO   ] __main__: 数据库初始化完成
+2026-07-29 15:24:23 [INFO   ] __main__: 应用程序已启动
+2026-07-29 15:24:23 [INFO   ] GUI: __main__: 应用程序已启动
+2026-07-29 15:40:48 [INFO   ] config.logging_config: 日志系统初始化完成
+2026-07-29 15:40:48 [INFO   ] __main__: 数据库初始化完成
+2026-07-29 15:40:49 [INFO   ] __main__: 应用程序已启动
+2026-07-29 15:40:49 [INFO   ] GUI: __main__: 应用程序已启动
+2026-07-29 15:41:14 [INFO   ] GUI: 切换到实机模式
+2026-07-29 15:42:30 [INFO   ] config.logging_config: 日志系统初始化完成
+2026-07-29 15:42:30 [INFO   ] __main__: 数据库初始化完成
+2026-07-29 15:42:31 [INFO   ] __main__: 应用程序已启动
+2026-07-29 15:42:31 [INFO   ] GUI: __main__: 应用程序已启动
+2026-07-29 15:42:37 [INFO   ] GUI: 切换到实机模式
+2026-07-29 15:42:55 [INFO   ] GUI: 测量任务 #9 已创建: 批号=3654867, 品名=RWD, 基准值=5.0
+2026-07-29 15:42:55 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:42:55 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:42:55 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:42:55 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:42:55 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:42:55 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:42:55 [INFO   ] GUI: 设备已连接
+2026-07-29 15:42:55 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:44:13 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:44:13 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:44:14 [INFO   ] GUI: 用户停止测量，共采集 5 个点位。
+2026-07-29 15:44:14 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:44:14 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:44:14 [INFO   ] GUI: 设备已断开
+2026-07-29 15:44:14 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:44:14 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:44:14 [INFO   ] GUI: 测量完成: 共 5 个点位, 最大值=0.004, 判定=NG
+2026-07-29 15:44:14 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:44:14 [INFO   ] utils.datasheet_writer: 测量数据已保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:44:14 [INFO   ] GUI: utils.datasheet_writer: 测量数据已保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:44:14 [INFO   ] GUI: 测量数据已自动保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:44:14 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:44:25 [INFO   ] GUI: 测量任务 #10 已创建: 批号=3654867, 品名=RWD, 基准值=5.0
+2026-07-29 15:44:25 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:44:25 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:44:25 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:44:26 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:44:26 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:44:26 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:44:26 [INFO   ] GUI: 设备已连接
+2026-07-29 15:44:26 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:45:02 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:45:02 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:45:02 [INFO   ] GUI: 用户停止测量，共采集 23 个点位。
+2026-07-29 15:45:02 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:45:02 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:45:02 [INFO   ] GUI: 设备已断开
+2026-07-29 15:45:02 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:45:02 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:45:02 [INFO   ] GUI: 测量完成: 共 23 个点位, 最大值=0.003, 判定=NG
+2026-07-29 15:45:02 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:45:02 [INFO   ] utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:45:02 [INFO   ] GUI: utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:45:02 [INFO   ] GUI: 测量数据已自动保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:45:02 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:45:59 [INFO   ] GUI: 测量任务 #11 已创建: 批号=3654867, 品名=RWD, 基准值=5.0
+2026-07-29 15:45:59 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:45:59 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:45:59 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:45:59 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:45:59 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:45:59 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:45:59 [INFO   ] GUI: 设备已连接
+2026-07-29 15:45:59 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:46:01 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:46:01 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:46:01 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:46:01 [INFO   ] GUI: 用户停止测量，共采集 0 个点位。
+2026-07-29 15:46:01 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:46:01 [INFO   ] GUI: 设备已断开
+2026-07-29 15:46:01 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:46:01 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:46:01 [INFO   ] GUI: 测量完成: 共 0 个点位, 最大值=None, 判定=--
+2026-07-29 15:46:01 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:46:01 [DEBUG  ] controllers.measurement_controller: Session #11 has no points — skipping datasheet save
+2026-07-29 15:46:01 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:46:18 [INFO   ] GUI: 测量任务 #12 已创建: 批号=3654867, 品名=RWD, 基准值=5.0
+2026-07-29 15:46:18 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:46:18 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:46:18 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:46:18 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:46:18 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:46:18 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:46:18 [INFO   ] GUI: 设备已连接
+2026-07-29 15:46:18 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:46:41 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:46:41 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:46:42 [INFO   ] GUI: 用户停止测量，共采集 23 个点位。
+2026-07-29 15:46:42 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:46:42 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:46:42 [INFO   ] GUI: 设备已断开
+2026-07-29 15:46:42 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:46:42 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:46:42 [INFO   ] GUI: 测量完成: 共 23 个点位, 最大值=0.006, 判定=NG
+2026-07-29 15:46:42 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:46:42 [INFO   ] utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:46:42 [INFO   ] GUI: utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:46:42 [INFO   ] GUI: 测量数据已自动保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:46:42 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:46:43 [INFO   ] GUI: 测量任务 #13 已创建: 批号=3654867, 品名=RWD, 基准值=5.0
+2026-07-29 15:46:43 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:46:43 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:46:43 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:46:43 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:46:43 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:46:43 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:46:43 [INFO   ] GUI: 设备已连接
+2026-07-29 15:46:43 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:47:18 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:47:18 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:47:18 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:47:18 [INFO   ] GUI: 用户停止测量，共采集 23 个点位。
+2026-07-29 15:47:18 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:47:18 [INFO   ] GUI: 设备已断开
+2026-07-29 15:47:18 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:47:18 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:47:18 [INFO   ] GUI: 测量完成: 共 23 个点位, 最大值=0.003, 判定=NG
+2026-07-29 15:47:18 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:47:18 [INFO   ] utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:47:18 [INFO   ] GUI: utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:47:18 [INFO   ] GUI: 测量数据已自动保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:47:18 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:49:22 [INFO   ] GUI: 测量任务 #14 已创建: 批号=3654867, 品名=RWD, 基准值=5.0
+2026-07-29 15:49:22 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:49:22 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:49:22 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:49:22 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:49:22 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:49:22 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:49:22 [INFO   ] GUI: 设备已连接
+2026-07-29 15:49:22 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:49:29 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:49:29 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:49:29 [INFO   ] GUI: 用户停止测量，共采集 0 个点位。
+2026-07-29 15:49:29 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:49:29 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:49:29 [INFO   ] GUI: 设备已断开
+2026-07-29 15:49:29 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:49:29 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:49:29 [INFO   ] GUI: 测量完成: 共 0 个点位, 最大值=None, 判定=--
+2026-07-29 15:49:29 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:49:29 [DEBUG  ] controllers.measurement_controller: Session #14 has no points — skipping datasheet save
+2026-07-29 15:49:29 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:49:32 [INFO   ] GUI: 测量任务 #15 已创建: 批号=3654867, 品名=RWD, 基准值=5.0
+2026-07-29 15:49:32 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:49:32 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:49:32 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:49:32 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:49:32 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:49:32 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:49:32 [INFO   ] GUI: 设备已连接
+2026-07-29 15:49:32 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:49:36 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:49:36 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:49:36 [INFO   ] controllers.device_controller: TCP连接已关闭
+
+2026-07-29 15:49:36 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:49:36 [INFO   ] GUI: 设备已断开
+2026-07-29 15:49:36 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:49:36 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:49:36 [INFO   ] GUI: 测量完成: 共 0 个点位, 最大值=None, 判定=--
+2026-07-29 15:49:36 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:49:36 [DEBUG  ] controllers.measurement_controller: Session #15 has no points — skipping datasheet save
+2026-07-29 15:49:36 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:49:38 [INFO   ] GUI: 测量任务 #16 已创建: 批号=3654867, 品名=RWD, 基准值=5.0
+2026-07-29 15:49:38 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:49:38 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:49:38 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:49:38 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:49:38 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:49:38 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:49:38 [INFO   ] GUI: 设备已连接
+2026-07-29 15:49:38 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:49:44 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:49:44 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:49:44 [INFO   ] GUI: 用户停止测量，共采集 22 个点位。
+2026-07-29 15:49:44 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:49:44 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:49:44 [INFO   ] GUI: 设备已断开
+2026-07-29 15:49:44 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:49:44 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:49:44 [INFO   ] GUI: 测量完成: 共 22 个点位, 最大值=0.004, 判定=NG
+2026-07-29 15:49:44 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:49:44 [INFO   ] utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:49:44 [INFO   ] GUI: utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:49:44 [INFO   ] GUI: 测量数据已自动保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:49:44 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:51:18 [INFO   ] GUI: 测量任务 #17 已创建: 批号=3654867, 品名=RWD, 基准值=5.0
+2026-07-29 15:51:18 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:51:18 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:51:18 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:51:18 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:51:18 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:51:18 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:51:18 [INFO   ] GUI: 设备已连接
+2026-07-29 15:51:18 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:51:54 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:51:54 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:51:54 [INFO   ] GUI: 用户停止测量，共采集 69 个点位。
+2026-07-29 15:51:54 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:51:54 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:51:54 [INFO   ] GUI: 设备已断开
+2026-07-29 15:51:54 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:51:54 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:51:54 [INFO   ] GUI: 测量完成: 共 69 个点位, 最大值=0.004, 判定=NG
+2026-07-29 15:51:54 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:51:54 [INFO   ] utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:51:54 [INFO   ] GUI: utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:51:54 [INFO   ] GUI: 测量数据已自动保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:51:54 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:53:36 [INFO   ] GUI: 测量任务 #18 已创建: 批号=3654867, 品名=RWD, 基准值=5.0
+2026-07-29 15:53:36 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:53:36 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:53:36 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:53:36 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:53:36 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:53:36 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:53:36 [INFO   ] GUI: 设备已连接
+2026-07-29 15:53:36 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:53:54 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:53:54 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:53:54 [INFO   ] GUI: 用户停止测量，共采集 23 个点位。
+2026-07-29 15:53:54 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:53:54 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:53:54 [INFO   ] GUI: 设备已断开
+2026-07-29 15:53:54 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:53:54 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:53:54 [INFO   ] GUI: 测量完成: 共 23 个点位, 最大值=0.137, 判定=NG
+2026-07-29 15:53:54 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:53:54 [INFO   ] utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:53:54 [INFO   ] GUI: utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:53:54 [INFO   ] GUI: 测量数据已自动保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:53:54 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:55:12 [INFO   ] GUI: 测量任务 #19 已创建: 批号=3654867, 品名=RWD, 基准值=5.0
+2026-07-29 15:55:12 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:55:12 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:55:12 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:55:12 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:55:13 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:55:13 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:55:13 [INFO   ] GUI: 设备已连接
+2026-07-29 15:55:13 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:55:41 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:55:41 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:55:42 [INFO   ] GUI: 用户停止测量，共采集 0 个点位。
+2026-07-29 15:55:42 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:55:42 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:55:42 [INFO   ] GUI: 设备已断开
+2026-07-29 15:55:42 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:55:42 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:55:42 [INFO   ] GUI: 测量完成: 共 0 个点位, 最大值=None, 判定=--
+2026-07-29 15:55:42 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:55:42 [DEBUG  ] controllers.measurement_controller: Session #19 has no points — skipping datasheet save
+2026-07-29 15:55:42 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:55:43 [INFO   ] GUI: 测量任务 #20 已创建: 批号=3654867, 品名=RWD, 基准值=5.0
+2026-07-29 15:55:43 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:55:43 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:55:43 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:55:43 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:55:44 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:55:44 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:55:44 [INFO   ] GUI: 设备已连接
+2026-07-29 15:55:44 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:56:04 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:56:04 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:56:04 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:56:04 [INFO   ] GUI: 用户停止测量，共采集 0 个点位。
+2026-07-29 15:56:04 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:56:04 [INFO   ] GUI: 设备已断开
+2026-07-29 15:56:04 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:56:04 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:56:04 [INFO   ] GUI: 测量完成: 共 0 个点位, 最大值=None, 判定=--
+2026-07-29 15:56:04 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:56:04 [DEBUG  ] controllers.measurement_controller: Session #20 has no points — skipping datasheet save
+2026-07-29 15:56:04 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:56:15 [INFO   ] GUI: 测量任务 #21 已创建: 批号=3654867, 品名=RWD, 基准值=5.0
+2026-07-29 15:56:15 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:56:15 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:56:15 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:56:15 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:56:15 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:56:15 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:56:15 [INFO   ] GUI: 设备已连接
+2026-07-29 15:56:15 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:56:35 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:56:35 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:56:35 [INFO   ] GUI: 用户停止测量，共采集 0 个点位。
+2026-07-29 15:56:35 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:56:35 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:56:35 [INFO   ] GUI: 设备已断开
+2026-07-29 15:56:35 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:56:35 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:56:35 [INFO   ] GUI: 测量完成: 共 0 个点位, 最大值=None, 判定=--
+2026-07-29 15:56:35 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:56:35 [DEBUG  ] controllers.measurement_controller: Session #21 has no points — skipping datasheet save
+2026-07-29 15:56:35 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:56:52 [INFO   ] GUI: 测量任务 #22 已创建: 批号=3654867, 品名=RWD, 基准值=5.0
+2026-07-29 15:56:52 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:56:52 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:56:52 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:56:52 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:56:52 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:56:52 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:56:52 [INFO   ] GUI: 设备已连接
+2026-07-29 15:56:52 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:57:56 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:57:56 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:57:57 [INFO   ] GUI: 用户停止测量，共采集 0 个点位。
+2026-07-29 15:57:57 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:57:57 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:57:57 [INFO   ] GUI: 设备已断开
+2026-07-29 15:57:57 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:57:57 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:57:57 [INFO   ] GUI: 测量完成: 共 0 个点位, 最大值=None, 判定=--
+2026-07-29 15:57:57 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:57:57 [DEBUG  ] controllers.measurement_controller: Session #22 has no points — skipping datasheet save
+2026-07-29 15:57:57 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:58:01 [INFO   ] GUI: 测量任务 #23 已创建: 批号=3654867, 品名=RWD, 基准值=5.0
+2026-07-29 15:58:01 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:58:01 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:58:01 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:58:01 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:58:01 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:58:01 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:58:01 [INFO   ] GUI: 设备已连接
+2026-07-29 15:58:01 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:58:10 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:58:10 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:58:10 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:58:10 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:58:10 [INFO   ] GUI: 用户停止测量，共采集 22 个点位。
+2026-07-29 15:58:10 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:58:10 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:58:10 [INFO   ] GUI: 设备已断开
+2026-07-29 15:58:10 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:58:10 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:58:10 [INFO   ] GUI: 测量完成: 共 22 个点位, 最大值=0.458, 判定=NG
+2026-07-29 15:58:10 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:58:10 [INFO   ] utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:58:10 [INFO   ] GUI: utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:58:10 [INFO   ] GUI: 测量数据已自动保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:58:10 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:59:44 [INFO   ] GUI: 品名基准值已更新
+2026-07-29 15:59:49 [INFO   ] GUI: 测量任务 #24 已创建: 批号=3654867, 品名=RWD, 基准值=0.8
+2026-07-29 15:59:49 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-29 15:59:49 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-29 15:59:49 [INFO   ] GUI: 开始测量 (实机模式)
+2026-07-29 15:59:49 [INFO   ] GUI: 正在连接设备 192.168.10.10:8500 (无协议模式)...
+2026-07-29 15:59:49 [INFO   ] controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:59:49 [INFO   ] GUI: controllers.device_controller: 已连接 LJ-X8000 (无协议模式): 192.168.10.10:8500
+2026-07-29 15:59:49 [INFO   ] GUI: 设备已连接
+2026-07-29 15:59:49 [INFO   ] GUI: 设备已连接，等待数据...
+2026-07-29 15:59:55 [DEBUG  ] workers.device_worker: 设备工作线程收到停止请求
+2026-07-29 15:59:55 [INFO   ] GUI: 正在停止测量...
+2026-07-29 15:59:56 [INFO   ] GUI: 用户停止测量，共采集 23 个点位。
+2026-07-29 15:59:56 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:59:56 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 15:59:56 [INFO   ] GUI: 设备已断开
+2026-07-29 15:59:56 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-29 15:59:56 [INFO   ] GUI: 测量完成: 共 23 个点位, 最大值=0.457, 判定=OK
+2026-07-29 15:59:56 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-29 15:59:56 [INFO   ] controllers.device_controller: TCP连接已关闭
+2026-07-29 15:59:56 [INFO   ] utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:59:56 [INFO   ] GUI: utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:59:56 [INFO   ] GUI: 测量数据已自动保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\3654867.csv
+2026-07-29 15:59:56 [INFO   ] GUI: controllers.device_controller: TCP连接已关闭
+2026-07-29 16:04:45 [INFO   ] config.logging_config: 日志系统初始化完成
+2026-07-29 16:04:45 [INFO   ] __main__: 数据库初始化完成
+2026-07-29 16:04:46 [INFO   ] __main__: 应用程序已启动
+2026-07-29 16:04:46 [INFO   ] GUI: __main__: 应用程序已启动
+2026-07-29 16:18:34 [INFO   ] config.logging_config: 日志系统初始化完成
+2026-07-29 16:18:34 [INFO   ] __main__: 数据库初始化完成
+2026-07-29 16:18:35 [INFO   ] __main__: 应用程序已启动
+2026-07-29 16:18:35 [INFO   ] GUI: __main__: 应用程序已启动

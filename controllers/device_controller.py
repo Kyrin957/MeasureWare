@@ -1,137 +1,128 @@
-"""Synchronous wrapper around LJXAwrap for LJ-X8000 communication.
+"""TCP socket client for LJ-X8000 no-protocol (无协议) communication.
+
+In no-protocol mode, the LJ-X8000 controller actively sends measurement values
+as ASCII text strings over TCP.  The PC acts as a passive TCP client:
+connect → receive → parse → repeat until stop.
 
 This controller is designed to run on a worker thread (not the GUI thread).
 All calls are synchronous and blocking.
 """
 
-import ctypes
 import logging
-
-import LJXAwrap
+import re
+import socket
 
 logger = logging.getLogger(__name__)
 
+# LJ-X8000 no-protocol output is lines like "+000.512" or "-000.512"
+# terminated with CR+LF or LF.
+_MEASUREMENT_PATTERN = re.compile(r"^[+-]\d+\.\d+$")
+
 
 class DeviceController:
-    """Thin synchronous wrapper around LJXAwrap.dll functions."""
-
-    def __init__(self, device_id: int = 0):
-        self._device_id = device_id
-        self._connected = False
+    """Thin synchronous wrapper around a TCP socket for LJ-X8000 no-protocol mode."""
 
     # ------------------------------------------------------------------
     # Connection lifecycle
     # ------------------------------------------------------------------
 
-    def open_connection(self, ethernet_config) -> int:
-        """Open Ethernet connection. Returns LJXAwrap return code (0 = success)."""
-        res = LJXAwrap.LJX8IF_EthernetOpen(self._device_id, ethernet_config)
-        if res == 0:
-            self._connected = True
-            logger.info(f"已连接 LJ-X8000 (设备ID={self._device_id})")
-        else:
-            logger.error(f"连接失败: 返回码 0x{res:08X}")
-        return res
+    def open_connection(self, ip_address: str, port: int, timeout: float = 3.0) -> bool:
+        """Open a TCP connection to the LJ-X8000 controller.
 
-    def close_connection(self) -> int:
-        """Close Ethernet connection."""
-        res = LJXAwrap.LJX8IF_CommunicationClose(self._device_id)
+        Returns:
+            True on success, False on failure.
+        """
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.settimeout(timeout)
+
+        try:
+            self._socket.connect((ip_address, port))
+            self._connected = True
+            logger.info(f"已连接 LJ-X8000 (无协议模式): {ip_address}:{port}")
+            return True
+        except (socket.timeout, ConnectionRefusedError, OSError) as e:
+            logger.error(f"TCP连接失败 [{ip_address}:{port}]: {e}")
+            self._connected = False
+            return False
+
+    def close_connection(self) -> None:
+        """Close the TCP connection gracefully."""
         self._connected = False
-        logger.info("连接已关闭")
-        return res
+        try:
+            if self._socket is not None:
+                self._socket.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass  # Socket may already be closed
+        try:
+            if self._socket is not None:
+                self._socket.close()
+        except OSError:
+            pass
+        logger.info("TCP连接已关闭")
 
     @property
     def is_connected(self) -> bool:
-        return self._connected
+        return getattr(self, "_connected", False)
 
     # ------------------------------------------------------------------
-    # Measurement control
+    # Data reception
     # ------------------------------------------------------------------
 
-    def start_measurement(self) -> int:
-        """Start measurement (continuous triggering)."""
-        res = LJXAwrap.LJX8IF_StartMeasure(self._device_id)
-        if res == 0:
-            logger.info("测量已开始")
-        else:
-            logger.error(f"启动测量失败: 0x{res:08X}")
-        return res
+    def receive_line(self, timeout: float = 1.0) -> str | None:
+        """Read one line of data from the controller.
 
-    def stop_measurement(self) -> int:
-        """Stop measurement."""
-        res = LJXAwrap.LJX8IF_StopMeasure(self._device_id)
-        if res == 0:
-            logger.info("测量已停止")
-        return res
-
-    def clear_memory(self) -> int:
-        """Clear controller's internal profile memory."""
-        res = LJXAwrap.LJX8IF_ClearMemory(self._device_id)
-        if res == 0:
-            logger.debug("控制器内存已清除")
-        return res
-
-    # ------------------------------------------------------------------
-    # Profile acquisition
-    # ------------------------------------------------------------------
-
-    def get_profile(self, req, rsp, profinfo, profdata, data_size: int) -> int:
-        """Get the latest profile from the controller.
+        Sets a short socket timeout so the call returns promptly when
+        no data is available, allowing the stop-event to be checked.
 
         Args:
-            req: LJX8IF_GET_PROFILE_REQUEST
-            rsp: LJX8IF_GET_PROFILE_RESPONSE (output)
-            profinfo: LJX8IF_PROFILE_INFO (output)
-            profdata: ctypes array for profile data (output)
-            data_size: Size of profdata buffer in bytes
+            timeout: Socket read timeout in seconds.
 
         Returns:
-            LJXAwrap return code (0 = success).
+            The received line (stripped of trailing whitespace), or None
+            if no data arrived within the timeout.
         """
-        return LJXAwrap.LJX8IF_GetProfile(
-            self._device_id, req, rsp, profinfo, profdata, data_size
-        )
-
-    @staticmethod
-    def create_get_profile_request():
-        """Create a default GetProfile request for latest single profile."""
-        req = LJXAwrap.LJX8IF_GET_PROFILE_REQUEST()
-        req.byTargetBank = 0x0       # Active bank
-        req.byPositionMode = 0x0     # From current position
-        req.dwGetProfileNo = 0x0     # N/A for current position mode
-        req.byGetProfileCount = 1    # Single profile
-        req.byErase = 0              # Do not erase
-        return req
-
-    @staticmethod
-    def calculate_profile_buffer_size(xpoint_num: int, with_luminance: int,
-                                      profile_count: int = 1) -> int:
-        """Calculate the required buffer size for GetProfile data."""
-        data_size = ctypes.sizeof(LJXAwrap.LJX8IF_PROFILE_HEADER)
-        data_size += ctypes.sizeof(LJXAwrap.LJX8IF_PROFILE_FOOTER)
-        data_size += ctypes.sizeof(ctypes.c_int) * xpoint_num * (1 + with_luminance)
-        data_size *= profile_count
-        return data_size
-
-    def get_device_info(self) -> dict:
-        """Retrieve device identification info."""
-        info = {}
         try:
-            headmodel = ctypes.create_string_buffer(32)
-            res = LJXAwrap.LJX8IF_GetHeadModel(self._device_id, headmodel)
-            if res == 0:
-                info["head_model"] = headmodel.value.decode("utf-8", errors="replace")
-            else:
-                info["head_model"] = "N/A"
+            self._socket.settimeout(timeout)
+            data = self._socket.recv(4096)
+            if not data:
+                # Connection closed by remote
+                logger.warning("TCP连接被远程关闭")
+                self._connected = False
+                return None
+            # Decode and return the first complete line
+            text = data.decode("ascii", errors="replace").strip()
+            return text if text else None
+        except socket.timeout:
+            return None
+        except OSError as e:
+            logger.error(f"接收数据出错: {e}")
+            self._connected = False
+            return None
 
-            ctrl_serial = ctypes.create_string_buffer(16)
-            head_serial = ctypes.create_string_buffer(16)
-            res = LJXAwrap.LJX8IF_GetSerialNumber(
-                self._device_id, ctrl_serial, head_serial
-            )
-            if res == 0:
-                info["controller_serial"] = ctrl_serial.value.decode("utf-8", errors="replace")
-                info["head_serial"] = head_serial.value.decode("utf-8", errors="replace")
-        except Exception as e:
-            logger.warning(f"无法读取设备信息: {e}")
-        return info
+    @staticmethod
+    def parse_measurement(text: str) -> float | None:
+        """Parse a no-protocol measurement string into a float value.
+
+        Expected format: ``"±NNN.NNN"`` (signed float, e.g. ``"+000.512"``,
+        ``"-012.345"``).
+
+        Returns:
+            Float value in mm, or None if the string does not match the
+            expected measurement format.
+        """
+        text = text.strip()
+        if not text:
+            return None
+        # Quick format check, then parse
+        if _MEASUREMENT_PATTERN.match(text):
+            try:
+                value = float(text)
+                return round(value, 6)
+            except ValueError:
+                return None
+        # Fallback: try parsing any numeric-looking string
+        try:
+            value = float(text)
+            return round(value, 6)
+        except ValueError:
+            return None

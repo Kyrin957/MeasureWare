@@ -1,6 +1,6 @@
 .venv/          # 虚拟环境文件夹
 __pycache__/    # Python 缓存
 *.pyc
-.vscode/        #VScode个人配置
+.vscode/        # VScode个人配置
 datasheets/     # 测量数据本地存档
 logs/           # 日志文件

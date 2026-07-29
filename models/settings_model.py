@@ -14,12 +14,11 @@ class DeviceConfig(Base):
     # IP address octets
     ip_octet1 = Column(Integer, default=192)
     ip_octet2 = Column(Integer, default=168)
-    ip_octet3 = Column(Integer, default=0)
-    ip_octet4 = Column(Integer, default=1)
+    ip_octet3 = Column(Integer, default=10)
+    ip_octet4 = Column(Integer, default=100)
 
-    # Port numbers
-    command_port = Column(Integer, default=24691)
-    high_speed_port = Column(Integer, default=24692)
+    # TCP no-protocol data port
+    command_port = Column(Integer, default=8500)
 
     # Extraction settings
     extraction_mode = Column(String(32), default="max")  # "max", "avg", "index"

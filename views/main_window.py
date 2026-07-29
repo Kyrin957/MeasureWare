@@ -30,7 +30,7 @@ class MainWindow(QMainWindow):
 
         # Create controller
         self._measurement_ctrl = MeasurementController(settings)
-        self._measurement_ctrl.use_simulation = True  # Default simulation mode
+        self._measurement_ctrl.use_simulation = False  # Default real device mode
 
         self._setup_ui()
         self._connect_signals()
@@ -88,7 +88,7 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self._statusbar)
         self._status_label = QLabel("就绪")
         self._statusbar.addPermanentWidget(self._status_label)
-        self._mode_label = QLabel("模式: 仿真")
+        self._mode_label = QLabel("模式: 实机")
         self._statusbar.addPermanentWidget(self._mode_label)
 
     def _setup_menus(self):
@@ -111,7 +111,7 @@ class MainWindow(QMainWindow):
 
         # Simulation toggle
         self._sim_action = settings_menu.addAction(
-            "✓ 仿真模式 (点此切换实机模式)", self._on_toggle_simulation
+            "✓ 实机模式 (点此切换仿真模式)", self._on_toggle_simulation
         )
 
         # Help menu
@@ -318,9 +318,9 @@ class MainWindow(QMainWindow):
         QMessageBox.about(
             self, "关于 MeasureWare",
             "<h3>MeasureWare</h3>"
-            "<p>封止树脂测量数据监测软件 v1.0</p>"
+            "<p>树脂测量数据监测软件 v1.0</p>"
             "<p>基于 Python + PySide6 开发</p>"
             "<p>适用于基恩士 LJ-X8000 系列线激光测量仪</p>"
             "<hr>"
-            "<p>通信库: LJXAwrap.py (Keyence Corp.)</p>"
+            "<p>通信方式: TCP 无协议模式</p>"
         )
