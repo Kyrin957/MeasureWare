@@ -5,7 +5,13 @@
       "Bash(python -c ' *)",
       "Bash(python -c \"import ast; ast.parse\\(open\\('utils/datasheet_writer.py', encoding='utf-8'\\).read\\(\\)\\); print\\('datasheet_writer.py: syntax OK'\\)\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\('controllers/measurement_controller.py', encoding='utf-8'\\).read\\(\\)\\); print\\('measurement_controller.py: syntax OK'\\)\")",
-      "Bash(python -c \"import ast; ast.parse\\(open\\('utils/datasheet_writer.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")"
+      "Bash(python -c \"import ast; ast.parse\\(open\\('utils/datasheet_writer.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(.venv/Scripts/pip list *)",
+      "Bash(.venv/Scripts/python --version)",
+      "Bash(.venv/Scripts/python -c \"from PySide6.QtCharts import QChart; print\\('QChart OK'\\)\")",
+      "Bash(.venv/Scripts/pyinstaller ResinMeasureWare.spec)",
+      "Bash(ls -lh build/ResinMeasureWare/warn-ResinMeasureWare.txt)",
+      "Bash(grep -v \"pysqlite2\\\\|MySQLdb\\\\|psycopg2\\\\|jinja2\" build/ResinMeasureWare/warn-ResinMeasureWare.txt)"
     ]
   }
 }

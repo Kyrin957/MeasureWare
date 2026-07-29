@@ -227,8 +227,6 @@ python main.py
 ### 通信方式说明
 - **实机模式**：使用 Python `socket` TCP 客户端，连接 LJ-X8000 无协议输出端口，被动接收 `"±000.512"` 格式的测量值字符串
 - **仿真模式**：使用 `simulation_worker.py` 生成模拟数据，与实机 Worker 共享相同的信号接口，可无缝切换
-- `LJXAwrap.py` / `LJX8_IF.dll` 为基恩士官方通信库，已弃用，仅保留作为参考
-- `sample_HowToCallFunctions.py` / `sample_ImageAcquisition.py` 为官方示例代码，仅保留作为参考
 
 ### LJ-X8000 无协议模式配置
 在 LJ-X8000 控制器端需配置以下参数以启用无协议 TCP 输出：
@@ -240,4 +238,4 @@ python main.py
 
 ## License
 
-本项目为内部使用工具。基恩士 `LJXAwrap.py` 通信库（Copyright (c) 2021 KEYENCE CORPORATION）已不再被应用程序引用，仅保留作为参考。
+本项目为内部使用工具。

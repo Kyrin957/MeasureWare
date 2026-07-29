@@ -72,6 +72,8 @@ class SettingsDialog(QDialog):
         comm_layout.addStretch()
         tabs.addTab(comm_tab, "通讯设置")
 
+        layout.addWidget(tabs)
+
         # Buttons
         button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Save |
@@ -91,24 +93,12 @@ class SettingsDialog(QDialog):
 
         self._cmd_port_spin.setValue(self._settings.command_port)
 
-        # Extraction
-        mode = self._settings.extraction_mode
-        idx = self._extr_mode_combo.findData(mode)
-        if idx >= 0:
-            self._extr_mode_combo.setCurrentIndex(idx)
-
-        self._roi_start_spin.setValue(self._settings.extraction_roi_start)
-        self._roi_end_spin.setValue(self._settings.extraction_roi_end)
-
     def _on_save(self):
         """Save settings to database."""
         octets = tuple(sb.value() for sb in self._ip_spinboxes)
         self._settings.save_all(
             ip_octets=octets,
             command_port=self._cmd_port_spin.value(),
-            extraction_mode=self._extr_mode_combo.currentData(),
-            roi_start=self._roi_start_spin.value(),
-            roi_end=self._roi_end_spin.value(),
         )
         QMessageBox.information(self, "保存", "设置已保存")
         self.accept()

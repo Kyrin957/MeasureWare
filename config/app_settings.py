@@ -105,12 +105,15 @@ class AppSettings:
         }
 
     def save_all(self, ip_octets, command_port,
-                 extraction_mode, roi_start, roi_end):
+                 extraction_mode=None, roi_start=None, roi_end=None):
         cfg = self._get_config()
         cfg.set_ip(ip_octets)
         cfg.command_port = command_port
-        cfg.extraction_mode = extraction_mode
-        cfg.extraction_roi_start = roi_start
-        cfg.extraction_roi_end = roi_end
+        if extraction_mode is not None:
+            cfg.extraction_mode = extraction_mode
+        if roi_start is not None:
+            cfg.extraction_roi_start = roi_start
+        if roi_end is not None:
+            cfg.extraction_roi_end = roi_end
         self._session.commit()
         logger.info("设备配置已保存")

@@ -18,17 +18,25 @@ logger = logging.getLogger(__name__)
 def _get_datasheet_root() -> str:
     """Return the absolute path to the datasheets root directory.
 
-    Project layout::
+    In development mode, datasheets live under the project root.
+    When frozen (PyInstaller), datasheets live in the exe's working directory.
 
-        MeasureWare/
-            datasheets/       <-- returned by this function
-                YYYY/
-                    MM/
-                        batch_xxx.csv
+    Directory hierarchy::
+
+        datasheets/
+            YYYY/
+                MM/
+                    batch_xxx.csv
     """
-    # This file lives in utils/ one level below the project root
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(project_root, "datasheets")
+    import sys
+
+    if getattr(sys, "frozen", False):
+        # Exe mode: use current working directory (where exe is launched)
+        return os.path.join(os.getcwd(), "datasheets")
+    else:
+        # Dev mode: project root
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        return os.path.join(project_root, "datasheets")
 
 
 def _build_filepath(batch_number: str, completed_at: datetime) -> str:
