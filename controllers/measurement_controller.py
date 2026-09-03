@@ -32,7 +32,7 @@ class MeasurementController(QObject):
     """Orchestrates the measurement workflow."""
 
     # Signals for GUI
-    point_data_ready = Signal(int, float)  # index, value
+    point_data_ready = Signal(int, float, object)  # index, height, width (width may be None)
     session_completed = Signal(dict)                    # session summary
     state_changed = Signal(str)                         # new state name
     log_message = Signal(str, int)                      # log
@@ -76,7 +76,7 @@ class MeasurementController(QObject):
     # Session preparation
     # ------------------------------------------------------------------
 
-    def prepare_session(self, batch_number: str, product_name: str,
+    def prepare_session(self, batch_number: str, spec_name: str,
                         inspection_sequence: str = "") -> int | None:
         """Validate inputs and create a MeasurementSession in the DB.
 
@@ -90,25 +90,24 @@ class MeasurementController(QObject):
         if not batch_number.strip():
             self.log_message.emit("请输入批号", logging.WARNING)
             return None
-        if not product_name.strip():
-            self.log_message.emit("请输入品名", logging.WARNING)
+        if not spec_name.strip():
+            self.log_message.emit("请输入树脂规格要求", logging.WARNING)
             return None
 
         session_db = Session()
         try:
-            # Look up baseline
+            # Look up spec limits
             baseline = session_db.query(ProductBaseline).filter_by(
-                product_name=product_name.strip()
+                spec_name=spec_name.strip()
             ).first()
 
             # Create session
             measurement_session = MeasurementSession(
                 batch_number=batch_number.strip(),
-                product_name=product_name.strip(),
+                spec_name=spec_name.strip(),
                 inspection_sequence=inspection_sequence.strip() if inspection_sequence else "",
-                baseline_value=baseline.baseline_value if baseline else None,
-                tolerance_upper=baseline.tolerance_upper if baseline else None,
-                tolerance_lower=baseline.tolerance_lower if baseline else None,
+                height_upper_limit=baseline.height_upper_limit if baseline else None,
+                width_upper_limit=baseline.width_upper_limit if baseline else None,
                 point_count=0,
                 started_at=datetime.now(),
             )
@@ -118,12 +117,22 @@ class MeasurementController(QObject):
             session_id = measurement_session.id
             self._current_session_id = session_id
 
-            self.log_message.emit(
-                f"测量任务 #{session_id} 已创建: 批号={batch_number}, "
-                f"品名={product_name}"
-                + (f", 基准值={baseline.baseline_value}" if baseline else ", 无基准值"),
-                logging.INFO
-            )
+            if baseline:
+                width_note = (f"{baseline.width_upper_limit}"
+                              if baseline.width_check_enabled else "不检查")
+                self.log_message.emit(
+                    f"测量任务 #{session_id} 已创建: 批号={batch_number}, "
+                    f"树脂规格要求={spec_name}, "
+                    f"高度上限={baseline.height_upper_limit} mm, "
+                    f"宽度上限={width_note}",
+                    logging.INFO
+                )
+            else:
+                self.log_message.emit(
+                    f"测量任务 #{session_id} 已创建: 批号={batch_number}, "
+                    f"树脂规格要求={spec_name}, 无规格上限值",
+                    logging.INFO
+                )
 
             self._set_state(MeasurementState.READY)
             return session_id
@@ -223,13 +232,13 @@ class MeasurementController(QObject):
     # Point handling  (main thread — lightweight, no DB work)
     # ------------------------------------------------------------------
 
-    @Slot(int, float)
-    def _on_point_acquired(self, point_index: int, value: float):
+    @Slot(int, float, object)
+    def _on_point_acquired(self, point_index: int, height: float, width):
         """Forward a measurement point to the GUI.
 
         DB storage is handled by the worker on its thread.
         """
-        self.point_data_ready.emit(point_index, value)
+        self.point_data_ready.emit(point_index, height, width)
 
     # ------------------------------------------------------------------
     # Completion  (main thread — lightweight, no DB work)
@@ -244,12 +253,13 @@ class MeasurementController(QObject):
     def _on_measurement_completed(self, summary: dict):
         """Handle measurement completion — summary already computed by worker."""
         point_count = summary.get("point_count", 0)
-        max_val = summary.get("max_measured_value", "N/A")
+        max_height = summary.get("max_height_value", "N/A")
+        max_width = summary.get("max_width_value", "N/A")
         judgment = summary.get("judgment", "N/A")
 
         self.log_message.emit(
             f"测量完成: 共 {point_count} 个点位, "
-            f"最大值={max_val}, 判定={judgment}",
+            f"高度最大值={max_height}, 宽度最大值={max_width}, 判定={judgment}",
             logging.INFO
         )
 
@@ -309,10 +319,13 @@ class MeasurementController(QObject):
     # ------------------------------------------------------------------
 
     def update_point_value(self, session_id: int, point_index: int,
-                           new_value: float) -> dict | None:
-        """Update a measurement point's value (from table edit).
+                           field: str, new_value: float) -> dict | None:
+        """Update a measurement point's height or width value (from table edit).
 
-        Recalculates session max and judgment after the edit.
+        Args:
+            field: "height" or "width".
+
+        Recalculates session max values and judgment after the edit.
         Returns updated session summary dict.
         """
         session_db = Session()
@@ -324,21 +337,31 @@ class MeasurementController(QObject):
             if point is None:
                 return None
 
-            point.measured_value = new_value
+            if field == "height":
+                point.height_value = new_value
+            elif field == "width":
+                point.width_value = new_value
+            else:
+                return None
             session_db.commit()
 
-            # Recalculate session max and judgment
+            # Recalculate session max values and judgment
             session = session_db.query(MeasurementSession).get(session_id)
             if session is None:
                 return None
 
             from sqlalchemy import func
-            max_result = session_db.query(
-                func.max(MeasurementPoint.measured_value)
+            max_height = session_db.query(
+                func.max(MeasurementPoint.height_value)
+            ).filter_by(session_id=session_id).scalar()
+            max_width = session_db.query(
+                func.max(MeasurementPoint.width_value)
             ).filter_by(session_id=session_id).scalar()
 
-            if max_result is not None:
-                session.max_measured_value = round(max_result, 6)
+            if max_height is not None:
+                session.max_height_value = round(max_height, 6)
+            if max_width is not None:
+                session.max_width_value = round(max_width, 6)
 
             session.compute_judgment()
             session_db.commit()

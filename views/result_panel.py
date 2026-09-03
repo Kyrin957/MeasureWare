@@ -1,12 +1,17 @@
-"""ResultPanel: displays max value, baseline, and OK/NG judgment."""
+"""ResultPanel: displays height/width max values, limits, and OK/NG judgment.
 
-from PySide6.QtWidgets import (QWidget, QVBoxLayout,
-                               QLabel, QFrame, QSizePolicy)
+The final judgment is the logical AND of the height result and the width
+result (width is only checked when its upper limit is greater than zero).
+"""
+
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
+                               QLabel, QFrame, QSizePolicy, QGroupBox,
+                               QFormLayout)
 from PySide6.QtCore import Qt, Slot
 
 
 class ResultPanel(QFrame):
-    """Panel showing measurement result: max value, baseline, OK/NG."""
+    """Panel showing height/width results and the combined OK/NG judgment."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -22,36 +27,17 @@ class ResultPanel(QFrame):
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         outer_layout.addWidget(title)
 
-        # Values column
-        values_layout = QVBoxLayout()
+        # Height metric group
+        (self._height_max_label, self._height_limit_label,
+         self._height_chip) = self._build_metric_group("高度", "height")
+        outer_layout.addWidget(self._height_group)
 
-        # Max value
-        max_group = QVBoxLayout()
-        max_label = QLabel("最大值")
-        max_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        max_label.setStyleSheet("color: gray; font-size: 12px;")
-        self._max_value_label = QLabel("--")
-        self._max_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._max_value_label.setStyleSheet("font-size: 18px; font-weight: bold; color: red;")
-        max_group.addWidget(max_label)
-        max_group.addWidget(self._max_value_label)
-        values_layout.addLayout(max_group)
+        # Width metric group
+        (self._width_max_label, self._width_limit_label,
+         self._width_chip) = self._build_metric_group("宽度", "width")
+        outer_layout.addWidget(self._width_group)
 
-        # Baseline
-        baseline_group = QVBoxLayout()
-        baseline_label = QLabel("基准值")
-        baseline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        baseline_label.setStyleSheet("color: gray; font-size: 12px;")
-        self._baseline_value_label = QLabel("--")
-        self._baseline_value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._baseline_value_label.setStyleSheet("font-size: 18px; font-weight: bold;")
-        baseline_group.addWidget(baseline_label)
-        baseline_group.addWidget(self._baseline_value_label)
-        values_layout.addLayout(baseline_group)
-
-        outer_layout.addLayout(values_layout)
-
-        # Judgment indicator
+        # Combined judgment indicator
         self._judgment_label = QLabel("--")
         self._judgment_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._judgment_label.setMinimumHeight(50)
@@ -71,31 +57,129 @@ class ResultPanel(QFrame):
         self._info_label.setStyleSheet("color: gray; font-size: 12px;")
         outer_layout.addWidget(self._info_label)
 
+        outer_layout.addStretch()
+
+    def _build_metric_group(self, title: str, attr: str):
+        """Build one metric block (max value + limit + OK/NG chip).
+
+        Stores the group box as ``_<attr>_group``.
+        Returns (max_label, limit_label, chip_label).
+        """
+        group = QGroupBox(title)
+        group.setStyleSheet("QGroupBox { font-weight: bold; }")
+        layout = QFormLayout(group)
+        layout.setLabelAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
+        )
+
+        max_label = QLabel("--")
+        max_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        max_label.setStyleSheet("font-size: 16px; font-weight: bold;")
+        layout.addRow("最大值", max_label)
+
+        limit_label = QLabel("--")
+        limit_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        limit_label.setStyleSheet("color: gray; font-size: 12px;")
+        layout.addRow("上限值", limit_label)
+
+        chip = QLabel("--")
+        chip.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        chip.setStyleSheet(
+            "font-size: 14px; font-weight: bold; border-radius: 4px; "
+            "padding: 2px; background-color: #E0E0E0; color: #666;"
+        )
+        layout.addRow("判定", chip)
+
+        setattr(self, f"_{attr}_group", group)
+        return (max_label, limit_label, chip)
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _chip(chip: QLabel, text: str, bg: str, fg: str):
+        chip.setText(text)
+        chip.setStyleSheet(
+            "font-size: 14px; font-weight: bold; border-radius: 4px; "
+            f"padding: 2px; background-color: {bg}; color: {fg};"
+        )
+
+    def _set_chip_verdict(self, chip: QLabel, ok: bool | None):
+        """ok: True → OK, False → NG, None → undetermined."""
+        if ok is True:
+            self._chip(chip, "OK", "#4CAF50", "white")
+        elif ok is False:
+            self._chip(chip, "NG", "#F44336", "white")
+        else:
+            self._chip(chip, "--", "#E0E0E0", "#666")
+
+    @staticmethod
+    def _value_style(over_limit: bool) -> str:
+        color = "#F44336" if over_limit else "#333333"
+        return f"font-size: 16px; font-weight: bold; color: {color};"
+
+    # ------------------------------------------------------------------
+    # Public slots
+    # ------------------------------------------------------------------
+
     @Slot(dict)
     def on_session_completed(self, summary: dict):
         """Update display with session results."""
-        max_val = summary.get("max_measured_value")
-        baseline_val = summary.get("baseline_value")
-        tolerance_upper = summary.get("tolerance_upper") or 0.0
-        tolerance_lower = summary.get("tolerance_lower") or 0.0
+        max_height = summary.get("max_height_value")
+        height_limit = summary.get("height_upper_limit")
+        max_width = summary.get("max_width_value")
+        width_limit = summary.get("width_upper_limit")
         judgment = summary.get("judgment", "--")
         point_count = summary.get("point_count", 0)
 
-        # Update max value
-        if max_val is not None:
-            self._max_value_label.setText(f"{max_val:.3f} mm")
+        # ---- Height ----
+        if max_height is not None:
+            self._height_max_label.setText(f"{max_height:.3f} mm")
         else:
-            self._max_value_label.setText("N/A")
+            self._height_max_label.setText("N/A")
 
-        # Update baseline — show tolerance range
-        if baseline_val is not None:
-            lower = baseline_val + tolerance_lower
-            upper = baseline_val + tolerance_upper
-            self._baseline_value_label.setText(f"{lower:.3f} ~ {upper:.3f} mm")
+        if height_limit is not None:
+            self._height_limit_label.setText(f"≤ {height_limit:.3f} mm")
         else:
-            self._baseline_value_label.setText("未设置")
+            self._height_limit_label.setText("未设置")
 
-        # Update judgment with color
+        if max_height is None or height_limit is None:
+            height_ok = None
+            self._height_max_label.setStyleSheet(self._value_style(False))
+        else:
+            height_ok = max_height <= height_limit
+            self._height_max_label.setStyleSheet(self._value_style(not height_ok))
+        self._set_chip_verdict(self._height_chip, height_ok)
+
+        # ---- Width ----
+        width_enabled = bool(width_limit and width_limit > 0)
+
+        if max_width is not None:
+            self._width_max_label.setText(f"{max_width:.3f} mm")
+        else:
+            self._width_max_label.setText("N/A")
+
+        if width_enabled:
+            self._width_limit_label.setText(f"≤ {width_limit:.3f} mm")
+        else:
+            self._width_limit_label.setText("不检查")
+
+        if not width_enabled:
+            width_ok = None
+            self._width_max_label.setStyleSheet(self._value_style(False))
+            self._chip(self._width_chip, "不检查", "#E0E0E0", "#666")
+        elif max_width is None:
+            width_ok = None
+            self._width_max_label.setStyleSheet(self._value_style(False))
+            self._set_chip_verdict(self._width_chip, None)
+        else:
+            width_ok = max_width <= width_limit
+            self._width_max_label.setStyleSheet(self._value_style(not width_ok))
+            self._set_chip_verdict(self._width_chip, width_ok)
+
+        # ---- Combined judgment ----
         if judgment == "OK":
             self._judgment_label.setText("●  OK  合格")
             self._judgment_label.setStyleSheet(
@@ -123,8 +207,15 @@ class ResultPanel(QFrame):
     @Slot()
     def reset(self):
         """Reset display to default state."""
-        self._max_value_label.setText("--")
-        self._baseline_value_label.setText("--")
+        for max_label, limit_label, chip in (
+            (self._height_max_label, self._height_limit_label, self._height_chip),
+            (self._width_max_label, self._width_limit_label, self._width_chip),
+        ):
+            max_label.setText("--")
+            max_label.setStyleSheet("font-size: 16px; font-weight: bold;")
+            limit_label.setText("--")
+            self._set_chip_verdict(chip, None)
+
         self._judgment_label.setText("--")
         self._judgment_label.setStyleSheet(
             "font-size: 28px; font-weight: bold; "

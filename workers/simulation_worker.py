@@ -1,6 +1,8 @@
 """SimulationWorker: generates synthetic profile data for offline development.
 
 Mimics the DeviceWorker interface using simulated data — no hardware required.
+Generates height (~0–2 mm) and width (~0–4 mm) values that match the chart's
+axis ranges.
 
 DB writes are performed on the worker thread with batch commits to avoid
 blocking the GUI event loop.
@@ -27,9 +29,9 @@ BATCH_COMMIT_SIZE = 20
 class SimulationWorker(QObject):
     """Simulated measurement worker for offline development and testing."""
 
-    point_acquired = Signal(int, float)  # point_index, value
-    measurement_finished = Signal()                   # thread lifecycle
-    measurement_completed = Signal(dict)              # carries summary dict
+    point_acquired = Signal(int, float, object)     # point_index, height, width
+    measurement_finished = Signal()                 # thread lifecycle
+    measurement_completed = Signal(dict)            # carries summary dict
     connection_established = Signal()
     connection_lost = Signal()
     error_occurred = Signal(str)
@@ -50,8 +52,10 @@ class SimulationWorker(QObject):
     def _reset_state(self):
         """Clear batch buffer and running stats before each run."""
         self._batch_buffer: list[MeasurementPoint] = []
-        self._max_value = -float("inf")
-        self._max_index = 0
+        self._max_height = -float("inf")
+        self._max_height_index = 0
+        self._max_width = -float("inf")
+        self._max_width_index = 0
 
     # ------------------------------------------------------------------
     # Public API
@@ -99,22 +103,27 @@ class SimulationWorker(QObject):
             session_db.rollback()
             logger.exception(f"批量写入点位数据失败: {e}")
 
-    def _handle_point(self, point_index: int, value: float, session_db):
+    def _handle_point(self, point_index: int, height: float,
+                      width: float | None, session_db):
         """Record one measurement point.
 
-        Tracks max value in memory, buffers for batch DB insert,
+        Tracks max height/width in memory, buffers for batch DB insert,
         and emits the cross-thread signal for GUI updates.
         """
-        # Track max value (no DB query needed)
-        if value > self._max_value:
-            self._max_value = value
-            self._max_index = point_index
+        # Track max values (no DB query needed)
+        if height > self._max_height:
+            self._max_height = height
+            self._max_height_index = point_index
+        if width is not None and width > self._max_width:
+            self._max_width = width
+            self._max_width_index = point_index
 
         # Buffer for batch insert
         point = MeasurementPoint(
             session_id=self._session_id,
             point_index=point_index,
-            measured_value=value,
+            height_value=height,
+            width_value=width,
             created_at=datetime.now(),
         )
         self._batch_buffer.append(point)
@@ -123,7 +132,7 @@ class SimulationWorker(QObject):
             self._flush_buffer(session_db)
 
         # Notify GUI (cross-thread queued signal)
-        self.point_acquired.emit(point_index, value)
+        self.point_acquired.emit(point_index, height, width)
 
     def _finalize(self, session_db, acquired_count: int) -> dict:
         """Flush remaining points, update session record, return summary."""
@@ -133,13 +142,16 @@ class SimulationWorker(QObject):
         session = session_db.query(MeasurementSession).get(self._session_id)
         if session:
             session.point_count = acquired_count
-            if self._max_value > -float("inf"):
-                session.max_measured_value = round(self._max_value, 6)
+            if self._max_height > -float("inf"):
+                session.max_height_value = round(self._max_height, 6)
+            if self._max_width > -float("inf"):
+                session.max_width_value = round(self._max_width, 6)
             session.compute_judgment()
             session.completed_at = datetime.now()
             session_db.commit()
             summary = session.to_summary_dict()
-            summary["max_point_index"] = self._max_index
+            summary["max_height_point_index"] = self._max_height_index
+            summary["max_width_point_index"] = self._max_width_index
 
         return summary
 
@@ -148,7 +160,7 @@ class SimulationWorker(QObject):
     # ------------------------------------------------------------------
 
     def _do_simulation(self, session_db):
-        """Generate synthetic measurement data."""
+        """Generate synthetic measurement data (height + width)."""
         # Simulate connection delay
         self.log_message.emit("仿真: 正在连接设备...", logging.INFO)
         time.sleep(0.3)
@@ -159,34 +171,34 @@ class SimulationWorker(QObject):
 
         acquired_count = 0
 
-        # Parameters for synthetic data — simulates a resin bump profile
-        # Values oscillate with slight noise around 5.0mm, with occasional peaks
-        base_value = 5.0  # mm
+        # Parameters for synthetic data — simulates a resin bump profile.
+        # Height stays within the 0–2 mm chart range, width within 0–4 mm.
+        height_base = 1.2   # mm
+        width_base = 2.8    # mm
 
         self.log_message.emit(
             "仿真: 正在采集数据...", logging.INFO
         )
 
         while not self._stop_event.is_set():
-            # Generate a measurement value with:
+            # Generate a measurement value pair with:
             # - Sine wave oscillation to simulate surface variation
             # - Random noise
             # - Occasional "defect" spike
             phase = acquired_count * 0.02 * math.pi  # gradual phase progression
-            sine_component = 0.15 * math.sin(phase)
-            noise = random.gauss(0, 0.02)
+            sine_component = 0.08 * math.sin(phase)
 
             # 5% chance of a larger deviation (simulates measurement variation)
-            if random.random() < 0.05:
-                spike = random.uniform(-0.3, 0.5)
-            else:
-                spike = 0.0
+            spike = random.uniform(0.1, 0.4) if random.random() < 0.05 else 0.0
 
-            value = base_value + sine_component + noise + spike
-            value = round(max(0.1, value), 6)
+            height = height_base + sine_component + random.gauss(0, 0.01) + spike
+            width = width_base + 2.5 * sine_component + random.gauss(0, 0.03) + 2 * spike
+
+            height = round(max(0.05, min(height, 1.95)), 6)
+            width = round(max(0.1, min(width, 3.9)), 6)
 
             acquired_count += 1
-            self._handle_point(acquired_count, value, session_db)
+            self._handle_point(acquired_count, height, width, session_db)
 
             # Simulate measurement interval (~0.5s per data point)
             time.sleep(0.5)

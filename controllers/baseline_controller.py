@@ -9,121 +9,120 @@ logger = logging.getLogger(__name__)
 
 
 class BaselineController:
-    """CRUD controller for product baseline values."""
+    """CRUD controller for resin specification limits."""
 
     @staticmethod
     def get_all() -> list[dict]:
-        """Return all product baselines as list of dicts."""
+        """Return all specification limits as list of dicts."""
         session_db = Session()
         try:
             baselines = session_db.query(ProductBaseline).order_by(
-                ProductBaseline.product_name
+                ProductBaseline.spec_name
             ).all()
             return [b.to_dict() for b in baselines]
         finally:
             session_db.close()
 
     @staticmethod
-    def get_by_product_name(product_name: str) -> dict | None:
-        """Look up baseline by product name. Returns dict or None."""
+    def get_by_spec_name(spec_name: str) -> dict | None:
+        """Look up limits by spec name. Returns dict or None."""
         session_db = Session()
         try:
             baseline = session_db.query(ProductBaseline).filter_by(
-                product_name=product_name.strip()
+                spec_name=spec_name.strip()
             ).first()
             return baseline.to_dict() if baseline else None
         finally:
             session_db.close()
 
     @staticmethod
-    def create(product_name: str, baseline_value: float,
-               tolerance_upper: float = 0.0,
-               tolerance_lower: float = 0.0) -> tuple[bool, str]:
-        """Create a new product baseline. Returns (success, message)."""
+    def create(spec_name: str, height_upper_limit: float,
+               width_upper_limit: float = 0.0) -> tuple[bool, str]:
+        """Create a new spec record. Returns (success, message)."""
         session_db = Session()
         try:
             # Check for duplicate
             existing = session_db.query(ProductBaseline).filter_by(
-                product_name=product_name.strip()
+                spec_name=spec_name.strip()
             ).first()
             if existing:
-                return (False, f"品名 '{product_name}' 已存在")
+                return (False, f"树脂规格要求 '{spec_name}' 已存在")
 
             baseline = ProductBaseline(
-                product_name=product_name.strip(),
-                baseline_value=baseline_value,
-                tolerance_upper=tolerance_upper,
-                tolerance_lower=tolerance_lower,
+                spec_name=spec_name.strip(),
+                height_upper_limit=height_upper_limit,
+                width_upper_limit=width_upper_limit,
             )
             session_db.add(baseline)
             session_db.commit()
-            logger.info(f"已创建基准值: {product_name} = {baseline_value}")
-            return (True, f"已添加品名 '{product_name}'")
+            logger.info(f"已创建规格要求: {spec_name} 高度上限={height_upper_limit} "
+                        f"宽度上限={width_upper_limit}")
+            return (True, f"已添加树脂规格要求 '{spec_name}'")
         except Exception as e:
             session_db.rollback()
-            logger.exception(f"创建基准值失败: {e}")
+            logger.exception(f"创建规格要求失败: {e}")
             return (False, f"添加失败: {e}")
         finally:
             session_db.close()
 
     @staticmethod
     def update(baseline_id: int, **kwargs) -> tuple[bool, str]:
-        """Update a product baseline. kwargs: product_name, baseline_value, etc."""
+        """Update a spec record. kwargs: spec_name, height_upper_limit, etc."""
         session_db = Session()
         try:
             baseline = session_db.query(ProductBaseline).get(baseline_id)
             if baseline is None:
-                return (False, f"基线记录 #{baseline_id} 不存在")
+                return (False, f"规格记录 #{baseline_id} 不存在")
 
-            # Check uniqueness if product name is being changed
-            new_name = kwargs.get("product_name")
-            if new_name and new_name != baseline.product_name:
+            # Check uniqueness if spec name is being changed
+            new_name = kwargs.get("spec_name")
+            if new_name and new_name != baseline.spec_name:
                 dup = session_db.query(ProductBaseline).filter_by(
-                    product_name=new_name.strip()
+                    spec_name=new_name.strip()
                 ).first()
                 if dup:
-                    return (False, f"品名 '{new_name}' 已存在")
+                    return (False, f"树脂规格要求 '{new_name}' 已存在")
 
             for key, value in kwargs.items():
                 if hasattr(baseline, key) and key != "id":
                     setattr(baseline, key, value)
 
             session_db.commit()
-            logger.info(f"已更新基准值 #{baseline_id}")
-            return (True, f"已更新品名 '{baseline.product_name}'")
+            logger.info(f"已更新规格要求 #{baseline_id}")
+            return (True, f"已更新树脂规格要求 '{baseline.spec_name}'")
         except Exception as e:
             session_db.rollback()
-            logger.exception(f"更新基准值失败: {e}")
+            logger.exception(f"更新规格要求失败: {e}")
             return (False, f"更新失败: {e}")
         finally:
             session_db.close()
 
     @staticmethod
     def delete(baseline_id: int) -> tuple[bool, str]:
-        """Delete a product baseline."""
+        """Delete a spec record."""
         session_db = Session()
         try:
             baseline = session_db.query(ProductBaseline).get(baseline_id)
             if baseline is None:
-                return (False, f"基线记录 #{baseline_id} 不存在")
+                return (False, f"规格记录 #{baseline_id} 不存在")
 
-            name = baseline.product_name
+            name = baseline.spec_name
             session_db.delete(baseline)
             session_db.commit()
-            logger.info(f"已删除基准值: {name}")
-            return (True, f"已删除品名 '{name}'")
+            logger.info(f"已删除规格要求: {name}")
+            return (True, f"已删除树脂规格要求 '{name}'")
         except Exception as e:
             session_db.rollback()
-            logger.exception(f"删除基准值失败: {e}")
+            logger.exception(f"删除规格要求失败: {e}")
             return (False, f"删除失败: {e}")
         finally:
             session_db.close()
 
     @staticmethod
     def save_all(baselines_data: list[dict]) -> tuple[bool, str]:
-        """Batch save: replace all baselines with the given list.
+        """Batch save: replace all spec records with the given list.
 
-        Each dict: {id or None, product_name, baseline_value, tolerance_upper, tolerance_lower}
+        Each dict: {id or None, spec_name, height_upper_limit, width_upper_limit}
         """
         session_db = Session()
         try:
@@ -133,7 +132,7 @@ class BaselineController:
                 if item.get("id") is not None
             }
 
-            # Delete baselines that are no longer in the list
+            # Delete records that are no longer in the list
             all_existing = session_db.query(ProductBaseline).all()
             for existing in all_existing:
                 if existing.id not in submitted_ids:
@@ -145,25 +144,23 @@ class BaselineController:
                     # Update existing
                     baseline = session_db.query(ProductBaseline).get(item["id"])
                     if baseline:
-                        baseline.product_name = item["product_name"].strip()
-                        baseline.baseline_value = item["baseline_value"]
-                        baseline.tolerance_upper = item.get("tolerance_upper", 0.0)
-                        baseline.tolerance_lower = item.get("tolerance_lower", 0.0)
+                        baseline.spec_name = item["spec_name"].strip()
+                        baseline.height_upper_limit = item["height_upper_limit"]
+                        baseline.width_upper_limit = item.get("width_upper_limit", 0.0)
                 else:
                     # Create new
                     baseline = ProductBaseline(
-                        product_name=item["product_name"].strip(),
-                        baseline_value=item["baseline_value"],
-                        tolerance_upper=item.get("tolerance_upper", 0.0),
-                        tolerance_lower=item.get("tolerance_lower", 0.0),
+                        spec_name=item["spec_name"].strip(),
+                        height_upper_limit=item["height_upper_limit"],
+                        width_upper_limit=item.get("width_upper_limit", 0.0),
                     )
                     session_db.add(baseline)
 
             session_db.commit()
-            return (True, "基准值已保存")
+            return (True, "规格要求已保存")
         except Exception as e:
             session_db.rollback()
-            logger.exception(f"批量保存基准值失败: {e}")
+            logger.exception(f"批量保存规格要求失败: {e}")
             return (False, f"保存失败: {e}")
         finally:
             session_db.close()

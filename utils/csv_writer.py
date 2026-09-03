@@ -20,37 +20,40 @@ def export_sessions_to_csv(sessions_data: list[dict], filepath: str):
         session_info = session.get("session", {})
         points = session.get("points", [])
 
-        baseline = session_info.get("baseline_value")
-        tol_upper = session_info.get("tolerance_upper")
-        tol_lower = session_info.get("tolerance_lower")
+        height_limit = session_info.get("height_upper_limit")
+        width_limit = session_info.get("width_upper_limit")
+        max_height = session_info.get("max_height_value")
+        max_width = session_info.get("max_width_value")
+        width_enabled = bool(width_limit and width_limit > 0)
 
         for pt in points:
-            measured = pt.get("measured_value")
-
-            # Deviation from baseline
-            deviation = None
-            if measured is not None and baseline is not None:
-                deviation = round(measured - baseline, 3)
+            height = pt.get("height_value")
+            width = pt.get("width_value")
 
             rows.append({
                 "批号": session_info.get("batch_number", ""),
-                "品名": session_info.get("product_name", ""),
+                "树脂规格要求": session_info.get("spec_name", ""),
                 "检测序号": session_info.get("inspection_sequence", ""),
                 "点位序号": pt.get("point_index", ""),
-                "测量值(mm)": (
-                    round(measured, 3) if measured is not None else ""
+                "高度(mm)": (
+                    round(height, 3) if height is not None else ""
                 ),
-                "最大值(mm)": session_info.get("max_measured_value", ""),
-                "基准值(mm)": (
-                    round(baseline, 3) if baseline is not None else ""
+                "宽度(mm)": (
+                    round(width, 3) if width is not None else ""
                 ),
-                "上公差(mm)": (
-                    round(tol_upper, 3) if tol_upper is not None else ""
+                "高度最大值(mm)": (
+                    round(max_height, 3) if max_height is not None else ""
                 ),
-                "下公差(mm)": (
-                    round(tol_lower, 3) if tol_lower is not None else ""
+                "宽度最大值(mm)": (
+                    round(max_width, 3) if max_width is not None else ""
                 ),
-                "偏差(mm)": deviation if deviation is not None else "",
+                "高度上限(mm)": (
+                    round(height_limit, 3) if height_limit is not None else ""
+                ),
+                "宽度上限(mm)": (
+                    round(width_limit, 3) if width_limit is not None else ""
+                ),
+                "宽度检查": "是" if width_enabled else "否",
                 "判定": session_info.get("judgment", ""),
                 "测量时间": session_info.get("started_at", ""),
             })

@@ -41,11 +41,11 @@ class JobInfoPanel(QGroupBox):
         self._batch_edit.setMinimumWidth(120)
         input_row.addWidget(self._batch_edit)
 
-        # Product name
-        input_row.addWidget(QLabel("品名:"))
+        # Resin specification requirement
+        input_row.addWidget(QLabel("树脂规格要求:"))
         self._product_combo = QComboBox()
         self._product_combo.setEditable(True)
-        self._product_combo.setPlaceholderText("选择或输入品名...")
+        self._product_combo.setPlaceholderText("选择或输入树脂规格要求...")
         self._product_combo.setMinimumWidth(150)
         input_row.addWidget(self._product_combo)
 
@@ -110,7 +110,7 @@ class JobInfoPanel(QGroupBox):
             QMessageBox.warning(self, "输入验证", "请输入批号")
             return
         if not product:
-            QMessageBox.warning(self, "输入验证", "请输入品名")
+            QMessageBox.warning(self, "输入验证", "请输入树脂规格要求")
             return
 
         self.start_requested.emit(batch, product, seq)
@@ -146,12 +146,12 @@ class JobInfoPanel(QGroupBox):
     # ------------------------------------------------------------------
 
     def _refresh_product_list(self):
-        """Reload product names from the baseline table."""
+        """Reload spec names from the baseline table."""
         current = self._product_combo.currentText()
         self._product_combo.clear()
         baselines = BaselineController.get_all()
         for b in baselines:
-            self._product_combo.addItem(b["product_name"])
+            self._product_combo.addItem(b["spec_name"])
         if current:
             idx = self._product_combo.findText(current)
             if idx >= 0:

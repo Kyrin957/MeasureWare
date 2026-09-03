@@ -1,8 +1,9 @@
 """DeviceWorker: measurement acquisition loop running on a QThread.
 
 Connects to an LJ-X8000 in no-protocol (无协议) TCP mode, passively receives
-measurement value strings (format ``"±000.512"``), parses them, and emits
-signals for GUI updates.
+measurement strings — height and width separated by a comma
+(format ``"+000.512,+001.234"``) — parses them, and emits signals for GUI
+updates.
 
 DB writes are performed on the worker thread with batch commits so the
 GUI event loop is never blocked by I/O.
@@ -31,7 +32,7 @@ class DeviceWorker(QObject):
     """Acquisition loop worker — runs on a dedicated QThread."""
 
     # Signals emitted to the main thread
-    point_acquired = Signal(int, float)         # point_index, value_mm
+    point_acquired = Signal(int, float, object)  # point_index, height, width (width may be None)
     measurement_finished = Signal()             # thread lifecycle
     measurement_completed = Signal(dict)        # carries summary dict
     connection_established = Signal()           # TCP connection opened
@@ -55,8 +56,10 @@ class DeviceWorker(QObject):
     def _reset_state(self):
         """Clear batch buffer and running stats before each run."""
         self._batch_buffer: list[MeasurementPoint] = []
-        self._max_value = -float("inf")
-        self._max_index = 0
+        self._max_height = -float("inf")
+        self._max_height_index = 0
+        self._max_width = -float("inf")
+        self._max_width_index = 0
 
     # ------------------------------------------------------------------
     # Public API
@@ -110,22 +113,27 @@ class DeviceWorker(QObject):
             session_db.rollback()
             logger.exception(f"批量写入点位数据失败: {e}")
 
-    def _handle_point(self, point_index: int, value: float, session_db):
+    def _handle_point(self, point_index: int, height: float,
+                      width: float | None, session_db):
         """Record one measurement point.
 
-        Tracks max value in memory, buffers for batch DB insert,
+        Tracks max height/width in memory, buffers for batch DB insert,
         and emits the cross-thread signal for GUI updates.
         """
-        # Track max value (no DB query needed)
-        if value > self._max_value:
-            self._max_value = value
-            self._max_index = point_index
+        # Track max values (no DB query needed)
+        if height > self._max_height:
+            self._max_height = height
+            self._max_height_index = point_index
+        if width is not None and width > self._max_width:
+            self._max_width = width
+            self._max_width_index = point_index
 
         # Buffer for batch insert
         point = MeasurementPoint(
             session_id=self._session_id,
             point_index=point_index,
-            measured_value=value,
+            height_value=height,
+            width_value=width,
             created_at=datetime.now(),
         )
         self._batch_buffer.append(point)
@@ -134,7 +142,7 @@ class DeviceWorker(QObject):
             self._flush_buffer(session_db)
 
         # Notify GUI (cross-thread queued signal)
-        self.point_acquired.emit(point_index, value)
+        self.point_acquired.emit(point_index, height, width)
 
     def _finalize(self, session_db, acquired_count: int) -> dict:
         """Flush remaining points, update session record, return summary."""
@@ -144,13 +152,16 @@ class DeviceWorker(QObject):
         session = session_db.query(MeasurementSession).get(self._session_id)
         if session:
             session.point_count = acquired_count
-            if self._max_value > -float("inf"):
-                session.max_measured_value = round(self._max_value, 6)
+            if self._max_height > -float("inf"):
+                session.max_height_value = round(self._max_height, 6)
+            if self._max_width > -float("inf"):
+                session.max_width_value = round(self._max_width, 6)
             session.compute_judgment()
             session.completed_at = datetime.now()
             session_db.commit()
             summary = session.to_summary_dict()
-            summary["max_point_index"] = self._max_index
+            summary["max_height_point_index"] = self._max_height_index
+            summary["max_width_point_index"] = self._max_width_index
 
         return summary
 
@@ -194,14 +205,15 @@ class DeviceWorker(QObject):
 
             consecutive_errors = 0
 
-            # Parse the received text into a measurement value
-            value = DeviceController.parse_measurement(raw)
-            if value is None:
+            # Parse the received text into a (height, width) pair
+            pair = DeviceController.parse_measurement_pair(raw)
+            if pair is None:
                 logger.debug(f"无法解析数据: {raw!r}")
                 continue
 
+            height, width = pair
             acquired_count += 1
-            self._handle_point(acquired_count, value, session_db)
+            self._handle_point(acquired_count, height, width, session_db)
 
         # ---- 4. Finalize ----
         if self._stop_event.is_set():

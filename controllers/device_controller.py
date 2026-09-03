@@ -4,6 +4,9 @@ In no-protocol mode, the LJ-X8000 controller actively sends measurement values
 as ASCII text strings over TCP.  The PC acts as a passive TCP client:
 connect → receive → parse → repeat until stop.
 
+Each message carries height and width separated by a comma, e.g.
+``"+000.512,+001.234"`` (height first, then width).
+
 This controller is designed to run on a worker thread (not the GUI thread).
 All calls are synchronous and blocking.
 """
@@ -14,9 +17,9 @@ import socket
 
 logger = logging.getLogger(__name__)
 
-# LJ-X8000 no-protocol output is lines like "+000.512" or "-000.512"
-# terminated with CR+LF or LF.
-_MEASUREMENT_PATTERN = re.compile(r"^[+-]\d+\.\d+$")
+# LJ-X8000 no-protocol output is lines like "+000.512,-001.234" (height,width)
+# terminated with CR+LF or LF.  Each value is a signed float.
+_MEASUREMENT_PATTERN = re.compile(r"^[+-]?\d+(?:\.\d+)?$")
 
 
 class DeviceController:
@@ -100,29 +103,32 @@ class DeviceController:
             return None
 
     @staticmethod
-    def parse_measurement(text: str) -> float | None:
-        """Parse a no-protocol measurement string into a float value.
+    def parse_measurement_pair(text: str) -> tuple[float, float | None] | None:
+        """Parse a no-protocol measurement string into (height, width).
 
-        Expected format: ``"±NNN.NNN"`` (signed float, e.g. ``"+000.512"``,
-        ``"-012.345"``).
+        Expected format: ``"±NNN.NNN,±NNN.NNN"`` — height and width separated
+        by a comma (e.g. ``"+000.512,+001.234"``).  A single value without a
+        comma is accepted as height only (width = None).
 
         Returns:
-            Float value in mm, or None if the string does not match the
-            expected measurement format.
+            ``(height_mm, width_mm_or_None)`` or None if the string does not
+            match the expected measurement format.
         """
         text = text.strip()
         if not text:
             return None
-        # Quick format check, then parse
-        if _MEASUREMENT_PATTERN.match(text):
-            try:
-                value = float(text)
-                return round(value, 6)
-            except ValueError:
-                return None
-        # Fallback: try parsing any numeric-looking string
+
+        parts = [p.strip() for p in text.split(",")]
+        if not 1 <= len(parts) <= 2 or any(not p for p in parts):
+            return None
+
+        # Format check on every token, then parse
+        if not all(_MEASUREMENT_PATTERN.match(p) for p in parts):
+            return None
+
         try:
-            value = float(text)
-            return round(value, 6)
+            height = round(float(parts[0]), 6)
+            width = round(float(parts[1]), 6) if len(parts) == 2 else None
+            return (height, width)
         except ValueError:
             return None

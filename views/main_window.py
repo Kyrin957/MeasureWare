@@ -105,7 +105,7 @@ class MainWindow(QMainWindow):
         settings_menu = menubar.addMenu("设置(&S)")
 
         comm_action = settings_menu.addAction("通讯设置", self._on_open_settings)
-        baseline_action = settings_menu.addAction("基准值管理", self._on_open_baselines)
+        baseline_action = settings_menu.addAction("树脂规格要求管理", self._on_open_baselines)
 
         settings_menu.addSeparator()
 
@@ -175,12 +175,14 @@ class MainWindow(QMainWindow):
 
     @Slot(dict)
     def _on_session_completed_chart(self, summary: dict):
-        """Update chart with max value marker."""
-        max_val = summary.get("max_measured_value")
-        if max_val is not None:
-            # max_point_index is tracked in-memory by the worker — no DB query needed
-            max_idx = summary.get("max_point_index", 0)
-            self._chart_view.mark_max(max_val, max_idx)
+        """Update chart with max value markers."""
+        # max point indices are tracked in-memory by the worker — no DB query needed
+        self._chart_view.mark_max(
+            summary.get("max_height_value"),
+            summary.get("max_height_point_index", 0),
+            summary.get("max_width_value"),
+            summary.get("max_width_point_index", 0),
+        )
 
     @Slot(str)
     def _on_state_changed(self, state_name: str):
@@ -199,32 +201,30 @@ class MainWindow(QMainWindow):
     # Point editing
     # ------------------------------------------------------------------
 
-    @Slot(int, float)
-    def _on_point_edited(self, point_index: int, new_value: float):
-        """Handle manual edit of a measurement point value."""
+    @Slot(int, str, float)
+    def _on_point_edited(self, point_index: int, field: str, new_value: float):
+        """Handle manual edit of a measurement point value (height/width)."""
         session_id = self._measurement_ctrl._current_session_id
         if session_id is None:
             return
 
         summary = self._measurement_ctrl.update_point_value(
-            session_id, point_index, new_value
+            session_id, point_index, field, new_value
         )
         if summary:
             self._result_panel.on_session_completed(summary)
 
-            # Update max marker on chart
-            max_val = summary.get("max_measured_value")
-            if max_val is not None:
-                max_idx = 0
-                # Find max index from current model
-                model = self._table_widget.get_model()
-                found_max, found_idx = model.find_max()
-                if found_max is not None:
-                    max_idx = found_idx
-                self._chart_view.mark_max(max_val, max_idx)
+            # Update max markers on chart
+            model = self._table_widget.get_model()
+            maxes = model.find_max()
+            self._chart_view.mark_max(
+                summary.get("max_height_value"), maxes["height"][1],
+                summary.get("max_width_value"), maxes["width"][1],
+            )
 
+            field_name = "高度" if field == "height" else "宽度"
             self._log_panel.append_log(
-                f"点位 {point_index} 已手动修改为 {new_value:.3f} mm, "
+                f"点位 {point_index} 的{field_name}已手动修改为 {new_value:.3f} mm, "
                 f"判定更新为 {summary.get('judgment', '--')}",
                 logging.INFO
             )
@@ -292,11 +292,11 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def _on_open_baselines(self):
-        """Open baseline management dialog."""
+        """Open spec management dialog."""
         dialog = BaselineDialog(self)
         if dialog.exec() == BaselineDialog.DialogCode.Accepted:
             self._job_panel.refresh_product_list()
-            self._log_panel.append_log("品名基准值已更新", logging.INFO)
+            self._log_panel.append_log("树脂规格要求已更新", logging.INFO)
 
     @Slot()
     def _on_toggle_simulation(self):

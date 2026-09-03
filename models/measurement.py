@@ -8,22 +8,26 @@ from models.database import Base
 
 
 class MeasurementSession(Base):
-    """One measurement session = one product inspection."""
+    """One measurement session = one product inspection.
+
+    Height and width are captured per point; the final judgment is the
+    logical AND of the height result and (when enabled) the width result.
+    """
 
     __tablename__ = "measurement_sessions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     batch_number = Column(String(128), nullable=False)
-    product_name = Column(String(128), nullable=False)
+    spec_name = Column(String(128), nullable=False)
     inspection_sequence = Column(String(64), default="")
 
-    # Snapshot of baseline at measurement time
-    baseline_value = Column(Float, nullable=True)
-    tolerance_upper = Column(Float, nullable=True)
-    tolerance_lower = Column(Float, nullable=True)
+    # Snapshot of spec limits at measurement time
+    height_upper_limit = Column(Float, nullable=True)
+    width_upper_limit = Column(Float, nullable=True)
 
     # Computed results
-    max_measured_value = Column(Float, nullable=True)
+    max_height_value = Column(Float, nullable=True)
+    max_width_value = Column(Float, nullable=True)
     judgment = Column(String(8), default="--")  # OK / NG / --
 
     point_count = Column(Integer, default=0)
@@ -34,32 +38,47 @@ class MeasurementSession(Base):
                           cascade="all, delete-orphan",
                           order_by="MeasurementPoint.point_index")
 
+    @property
+    def width_check_enabled(self) -> bool:
+        """Width inspection is disabled when the limit is zero/None."""
+        return bool(self.width_upper_limit and self.width_upper_limit > 0)
+
     def compute_judgment(self):
-        """Recompute judgment based on max value and baseline tolerances."""
-        if self.max_measured_value is None or self.baseline_value is None:
+        """Recompute judgment: height AND width (width only when enabled).
+
+        - Height: OK when max height <= height upper limit.
+        - Width:  checked only when width_upper_limit > 0;
+                  OK when max width <= width upper limit.
+        - Final:  OK only when every enabled check passes.
+        """
+        if self.max_height_value is None or self.height_upper_limit is None:
             self.judgment = "--"
             return
 
-        diff = self.max_measured_value - self.baseline_value
+        height_ok = self.max_height_value <= self.height_upper_limit
 
-        tol_upper = self.tolerance_upper or 0.0
-        tol_lower = self.tolerance_lower or 0.0
+        if not self.width_check_enabled:
+            self.judgment = "OK" if height_ok else "NG"
+            return
 
-        if tol_lower <= diff <= tol_upper:
-            self.judgment = "OK"
-        else:
-            self.judgment = "NG"
+        if self.max_width_value is None:
+            # Width check required but no width data available
+            self.judgment = "--"
+            return
+
+        width_ok = self.max_width_value <= self.width_upper_limit
+        self.judgment = "OK" if (height_ok and width_ok) else "NG"
 
     def to_summary_dict(self) -> dict:
         return {
             "id": self.id,
             "batch_number": self.batch_number,
-            "product_name": self.product_name,
+            "spec_name": self.spec_name,
             "inspection_sequence": self.inspection_sequence,
-            "baseline_value": self.baseline_value,
-            "tolerance_upper": self.tolerance_upper,
-            "tolerance_lower": self.tolerance_lower,
-            "max_measured_value": self.max_measured_value,
+            "height_upper_limit": self.height_upper_limit,
+            "width_upper_limit": self.width_upper_limit,
+            "max_height_value": self.max_height_value,
+            "max_width_value": self.max_width_value,
             "judgment": self.judgment,
             "point_count": self.point_count,
             "started_at": self.started_at.isoformat() if self.started_at else "",
@@ -68,7 +87,11 @@ class MeasurementSession(Base):
 
 
 class MeasurementPoint(Base):
-    """Individual measurement point within a session."""
+    """Individual measurement point within a session.
+
+    Each point carries the height value always, and the width value when
+    the device provides it (width is ``None`` when not measured).
+    """
 
     __tablename__ = "measurement_points"
     __table_args__ = (
@@ -79,7 +102,8 @@ class MeasurementPoint(Base):
     session_id = Column(Integer, ForeignKey("measurement_sessions.id"),
                         nullable=False)
     point_index = Column(Integer, nullable=False)
-    measured_value = Column(Float, nullable=False)
+    height_value = Column(Float, nullable=False)
+    width_value = Column(Float, nullable=True)
     created_at = Column(DateTime, default=datetime.now)
 
     session = relationship("MeasurementSession", back_populates="points")
@@ -89,10 +113,11 @@ class MeasurementPoint(Base):
             "id": self.id,
             "session_id": self.session_id,
             "point_index": self.point_index,
-            "measured_value": self.measured_value,
+            "height_value": self.height_value,
+            "width_value": self.width_value,
             "created_at": self.created_at.isoformat() if self.created_at else "",
         }
 
     def __repr__(self):
         return (f"<MeasurementPoint(idx={self.point_index}, "
-                f"value={self.measured_value})>")
+                f"height={self.height_value}, width={self.width_value})>")

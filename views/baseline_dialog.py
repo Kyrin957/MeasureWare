@@ -1,11 +1,11 @@
-"""BaselineDialog: CRUD management for product baseline values."""
+"""BaselineDialog: CRUD management for resin specification limits."""
 
 import logging
 
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout,
                                QTableView, QHeaderView, QPushButton,
                                QMessageBox, QDialogButtonBox,
-                               QAbstractItemView)
+                               QAbstractItemView, QLabel)
 from PySide6.QtCore import (Qt, QAbstractTableModel, QModelIndex,
                             Signal, Slot)
 
@@ -17,11 +17,11 @@ logger = logging.getLogger(__name__)
 class BaselineTableModel(QAbstractTableModel):
     """Table model for ProductBaseline CRUD in dialog."""
 
-    COLUMNS = ["品名", "基准值 (mm)", "上公差 (mm)", "下公差 (mm)"]
+    COLUMNS = ["树脂规格要求", "高度上限 (mm)", "宽度上限 (mm)"]
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._baselines: list[dict] = []  # Each has id, product_name, baseline_value, tolerance_upper, tolerance_lower
+        self._baselines: list[dict] = []  # Each has id, spec_name, height_upper_limit, width_upper_limit
         self._dirty = False  # Track if user has made changes
 
     def rowCount(self, parent=QModelIndex()) -> int:
@@ -43,15 +43,22 @@ class BaselineTableModel(QAbstractTableModel):
         col = index.column()
         item = self._baselines[row]
 
-        if role in (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole):
+        if role == Qt.ItemDataRole.EditRole:
             if col == 0:
-                return item.get("product_name", "")
+                return item.get("spec_name", "")
             elif col == 1:
-                return f"{item.get('baseline_value', 0):.3f}"
+                return f"{item.get('height_upper_limit', 0):.3f}"
             elif col == 2:
-                return f"{item.get('tolerance_upper', 0):.3f}"
-            elif col == 3:
-                return f"{item.get('tolerance_lower', 0):.3f}"
+                return f"{item.get('width_upper_limit', 0):.3f}"
+
+        elif role == Qt.ItemDataRole.DisplayRole:
+            if col == 0:
+                return item.get("spec_name", "")
+            elif col == 1:
+                return f"{item.get('height_upper_limit', 0):.3f}"
+            elif col == 2:
+                width_limit = item.get("width_upper_limit", 0)
+                return f"{width_limit:.3f}" if width_limit > 0 else "0 (不检查)"
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
             if col == 0:
@@ -70,9 +77,9 @@ class BaselineTableModel(QAbstractTableModel):
 
         try:
             if col == 0:
-                self._baselines[row]["product_name"] = str(value).strip()
-            elif col in (1, 2, 3):
-                field = {1: "baseline_value", 2: "tolerance_upper", 3: "tolerance_lower"}[col]
+                self._baselines[row]["spec_name"] = str(value).strip()
+            elif col in (1, 2):
+                field = {1: "height_upper_limit", 2: "width_upper_limit"}[col]
                 self._baselines[row][field] = float(value)
         except (ValueError, TypeError):
             return False
@@ -93,10 +100,9 @@ class BaselineTableModel(QAbstractTableModel):
         self.beginResetModel()
         self._baselines = [{
             "id": b.get("id"),
-            "product_name": b.get("product_name", ""),
-            "baseline_value": b.get("baseline_value", 0),
-            "tolerance_upper": b.get("tolerance_upper", 0),
-            "tolerance_lower": b.get("tolerance_lower", 0),
+            "spec_name": b.get("spec_name", ""),
+            "height_upper_limit": b.get("height_upper_limit", 0),
+            "width_upper_limit": b.get("width_upper_limit", 0),
         } for b in baselines]
         self._dirty = False
         self.endResetModel()
@@ -107,10 +113,9 @@ class BaselineTableModel(QAbstractTableModel):
         self.beginInsertRows(QModelIndex(), row, row)
         self._baselines.append({
             "id": None,
-            "product_name": "",
-            "baseline_value": 0.0,
-            "tolerance_upper": 0.0,
-            "tolerance_lower": 0.0,
+            "spec_name": "",
+            "height_upper_limit": 0.0,
+            "width_upper_limit": 0.0,
         })
         self._dirty = True
         self.endInsertRows()
@@ -133,7 +138,7 @@ class BaselineTableModel(QAbstractTableModel):
 
 
 class BaselineDialog(QDialog):
-    """Modal dialog for managing product baseline values."""
+    """Modal dialog for managing resin specification limits."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -141,7 +146,7 @@ class BaselineDialog(QDialog):
         self._load_data()
 
     def _setup_ui(self):
-        self.setWindowTitle("基准值管理")
+        self.setWindowTitle("树脂规格要求管理")
         self.setMinimumSize(550, 400)
         self.resize(600, 450)
 
@@ -159,11 +164,6 @@ class BaselineDialog(QDialog):
         toolbar.addWidget(self._delete_btn)
 
         toolbar.addStretch()
-
-        # help_label = QPushButton("?")
-        # help_label.setFixedWidth(30)
-        # help_label.setToolTip("双击单元格可编辑\n品名为空的行在保存时会被忽略")
-        # toolbar.addWidget(help_label)
 
         layout.addLayout(toolbar)
 
@@ -188,9 +188,13 @@ class BaselineDialog(QDialog):
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
 
         layout.addWidget(self._table_view)
+
+        # Hint
+        hint = QLabel("提示: 宽度上限设为 0 表示该规格不检查宽度")
+        hint.setStyleSheet("color: gray; font-size: 12px;")
+        layout.addWidget(hint)
 
         # Buttons
         button_box = QDialogButtonBox(
@@ -224,11 +228,11 @@ class BaselineDialog(QDialog):
 
         row = selected[0].row()
         item = self._model.get_baselines()[row]
-        name = item.get("product_name", "") or "(空)"
+        name = item.get("spec_name", "") or "(空)"
 
         reply = QMessageBox.question(
             self, "确认删除",
-            f"确定要删除品名 '{name}' 的基准值吗?",
+            f"确定要删除树脂规格要求 '{name}' 吗?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
 
@@ -240,25 +244,40 @@ class BaselineDialog(QDialog):
         """Validate and save all baselines."""
         baselines = self._model.get_baselines()
 
-        # Filter out rows with empty product name
-        valid = [b for b in baselines if b.get("product_name", "").strip()]
+        # Filter out rows with empty spec name
+        valid = [b for b in baselines if b.get("spec_name", "").strip()]
         empty_count = len(baselines) - len(valid)
 
         if not valid:
-            QMessageBox.warning(self, "验证失败", "没有有效的基准值记录（品名不能为空）")
+            QMessageBox.warning(self, "验证失败", "没有有效的规格记录（树脂规格要求不能为空）")
             return
 
         # Check for duplicate names
-        names = [b["product_name"] for b in valid]
+        names = [b["spec_name"] for b in valid]
         if len(names) != len(set(names)):
-            QMessageBox.warning(self, "验证失败", "品名存在重复，请检查")
+            QMessageBox.warning(self, "验证失败", "树脂规格要求存在重复，请检查")
             return
+
+        # Limits must not be negative; height limit must be positive
+        for b in valid:
+            if b.get("height_upper_limit", 0) <= 0:
+                QMessageBox.warning(
+                    self, "验证失败",
+                    f"'{b['spec_name']}' 的高度上限必须大于 0"
+                )
+                return
+            if b.get("width_upper_limit", 0) < 0:
+                QMessageBox.warning(
+                    self, "验证失败",
+                    f"'{b['spec_name']}' 的宽度上限不能为负数"
+                )
+                return
 
         success, msg = BaselineController.save_all(valid)
 
         if success:
             if empty_count > 0:
-                msg += f"\n(已忽略 {empty_count} 条空品名的记录)"
+                msg += f"\n(已忽略 {empty_count} 条规格要求为空的记录)"
             QMessageBox.information(self, "保存", msg)
             self.accept()
         else:

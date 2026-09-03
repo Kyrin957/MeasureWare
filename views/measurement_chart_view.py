@@ -1,4 +1,8 @@
-"""MeasurementChartView: real-time line chart with max-value marker."""
+"""MeasurementChartView: real-time dual-axis line chart with max-value markers.
+
+Height is plotted against the left axis (scale 0–2 mm) and width against the
+right axis (scale 0–4 mm).  Both max values are marked with scatter points.
+"""
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PySide6.QtCore import Slot
@@ -9,16 +13,16 @@ from PySide6.QtCore import Qt
 
 
 class MeasurementChartView(QWidget):
-    """Real-time measurement line chart using QtCharts."""
+    """Real-time height/width measurement chart using QtCharts."""
 
     MAX_POINTS_DISPLAY = 2000  # Max visible points before we start trimming
+
+    HEIGHT_AXIS_MAX = 2.0      # Left axis full scale (mm)
+    WIDTH_AXIS_MAX = 4.0       # Right axis full scale (mm)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._setup_ui()
-        self._all_values = []  # Store (index, value) for max tracking
-        self._min_y = float("inf")
-        self._max_y = -float("inf")
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -36,21 +40,36 @@ class MeasurementChartView(QWidget):
         self._chart.legend().setVisible(True)
         self._chart.legend().setAlignment(Qt.AlignmentFlag.AlignBottom)
 
-        # Line series for measurement values
-        self._line_series = QLineSeries()
-        self._line_series.setName("测量值")
+        # Line series — height (left axis)
+        self._height_series = QLineSeries()
+        self._height_series.setName("高度")
         pen = QPen(QColor("#2196F3"))
         pen.setWidth(2)
-        self._line_series.setPen(pen)
-        self._chart.addSeries(self._line_series)
+        self._height_series.setPen(pen)
+        self._chart.addSeries(self._height_series)
 
-        # Scatter series for max value marker
-        self._max_scatter = QScatterSeries()
-        self._max_scatter.setName("最大值")
-        self._max_scatter.setMarkerSize(12)
-        self._max_scatter.setColor(QColor("#F44336"))
-        self._max_scatter.setBorderColor(QColor("#B71C1C"))
-        self._chart.addSeries(self._max_scatter)
+        # Line series — width (right axis)
+        self._width_series = QLineSeries()
+        self._width_series.setName("宽度")
+        pen = QPen(QColor("#FF9800"))
+        pen.setWidth(2)
+        self._width_series.setPen(pen)
+        self._chart.addSeries(self._width_series)
+
+        # Scatter series for max value markers
+        self._max_height_scatter = QScatterSeries()
+        self._max_height_scatter.setName("高度最大值")
+        self._max_height_scatter.setMarkerSize(12)
+        self._max_height_scatter.setColor(QColor("#F44336"))
+        self._max_height_scatter.setBorderColor(QColor("#B71C1C"))
+        self._chart.addSeries(self._max_height_scatter)
+
+        self._max_width_scatter = QScatterSeries()
+        self._max_width_scatter.setName("宽度最大值")
+        self._max_width_scatter.setMarkerSize(12)
+        self._max_width_scatter.setColor(QColor("#F44336"))
+        self._max_width_scatter.setBorderColor(QColor("#B71C1C"))
+        self._chart.addSeries(self._max_width_scatter)
 
         # Axes
         self._axis_x = QValueAxis()
@@ -60,73 +79,80 @@ class MeasurementChartView(QWidget):
         self._axis_x.setTickCount(11)
         self._chart.addAxis(self._axis_x, Qt.AlignmentFlag.AlignBottom)
 
-        self._axis_y = QValueAxis()
-        self._axis_y.setTitleText("测量值 (mm)")
-        self._axis_y.setLabelFormat("%.3f")
-        self._axis_y.setRange(0, 10)
-        self._axis_y.setTickCount(11)
-        self._chart.addAxis(self._axis_y, Qt.AlignmentFlag.AlignLeft)
+        # Left axis — height scale
+        self._axis_y_height = QValueAxis()
+        self._axis_y_height.setTitleText("高度 (mm)")
+        self._axis_y_height.setLabelFormat("%.2f")
+        self._axis_y_height.setRange(0, self.HEIGHT_AXIS_MAX)
+        self._axis_y_height.setTickCount(11)
+        self._chart.addAxis(self._axis_y_height, Qt.AlignmentFlag.AlignLeft)
 
-        self._line_series.attachAxis(self._axis_x)
-        self._line_series.attachAxis(self._axis_y)
-        self._max_scatter.attachAxis(self._axis_x)
-        self._max_scatter.attachAxis(self._axis_y)
+        # Right axis — width scale
+        self._axis_y_width = QValueAxis()
+        self._axis_y_width.setTitleText("宽度 (mm)")
+        self._axis_y_width.setLabelFormat("%.2f")
+        self._axis_y_width.setRange(0, self.WIDTH_AXIS_MAX)
+        self._axis_y_width.setTickCount(11)
+        self._chart.addAxis(self._axis_y_width, Qt.AlignmentFlag.AlignRight)
+
+        # Attach series to their axes
+        self._height_series.attachAxis(self._axis_x)
+        self._height_series.attachAxis(self._axis_y_height)
+        self._width_series.attachAxis(self._axis_x)
+        self._width_series.attachAxis(self._axis_y_width)
+        self._max_height_scatter.attachAxis(self._axis_x)
+        self._max_height_scatter.attachAxis(self._axis_y_height)
+        self._max_width_scatter.attachAxis(self._axis_x)
+        self._max_width_scatter.attachAxis(self._axis_y_width)
 
         # Chart view
         self._chart_view = QChartView(self._chart)
         self._chart_view.setRenderHint(QPainter.RenderHint.Antialiasing)
         layout.addWidget(self._chart_view)
 
-        # Track value range incrementally — avoids O(n) scan on every point
-        self._min_y = float("inf")
-        self._max_y = -float("inf")
-
-    @Slot(int, float)
-    def add_point(self, point_index: int, value: float):
-        """Add a new measurement point to the chart."""
-        self._all_values.append((point_index, value))
-
-        # Update running min/max (O(1) instead of O(n) scan)
-        if value < self._min_y:
-            self._min_y = value
-        if value > self._max_y:
-            self._max_y = value
-
+    @Slot(int, float, object)
+    def add_point(self, point_index: int, height: float, width):
+        """Add a new measurement point (height + width) to the chart."""
         # Append to line series
-        self._line_series.append(float(point_index), value)
+        self._height_series.append(float(point_index), height)
+        if width is not None:
+            self._width_series.append(float(point_index), width)
 
         # Trim old points if too many
-        if self._line_series.count() > self.MAX_POINTS_DISPLAY:
-            self._line_series.removePoints(0, 500)
+        if self._height_series.count() > self.MAX_POINTS_DISPLAY:
+            self._height_series.removePoints(0, 500)
+        if self._width_series.count() > self.MAX_POINTS_DISPLAY:
+            self._width_series.removePoints(0, 500)
 
         # Adjust X axis range
         if point_index > self._axis_x.max():
             self._axis_x.setRange(0, point_index + 50)
 
-        # Adjust Y axis range if the new point pushes beyond current bounds
-        y_lo = self._axis_y.min()
-        y_hi = self._axis_y.max()
-        if value < y_lo or value > y_hi:
-            margin = max((self._max_y - self._min_y) * 0.1, 0.1)
-            self._axis_y.setRange(
-                max(0, self._min_y - margin),
-                self._max_y + margin
-            )
+        # Expand an axis only when a value exceeds its full scale —
+        # an over-limit spike must stay visible on the chart.
+        if height > self._axis_y_height.max():
+            self._axis_y_height.setRange(0, height * 1.1)
+        if width is not None and width > self._axis_y_width.max():
+            self._axis_y_width.setRange(0, width * 1.1)
 
-    @Slot(float, float)
-    def mark_max(self, max_value: float, max_index: int):
-        """Mark the maximum value point on the chart."""
-        self._max_scatter.clear()
-        if max_value is not None and max_index > 0:
-            self._max_scatter.append(float(max_index), max_value)
+    @Slot(float, int, float, int)
+    def mark_max(self, height_value: float, height_index: int,
+                 width_value: float, width_index: int):
+        """Mark the maximum height/width points on the chart."""
+        self._max_height_scatter.clear()
+        self._max_width_scatter.clear()
+        if height_value is not None and height_index > 0:
+            self._max_height_scatter.append(float(height_index), height_value)
+        if width_value is not None and width_index > 0:
+            self._max_width_scatter.append(float(width_index), width_value)
 
     @Slot()
     def reset(self):
         """Clear the chart for a new measurement."""
-        self._line_series.clear()
-        self._max_scatter.clear()
-        self._all_values.clear()
+        self._height_series.clear()
+        self._width_series.clear()
+        self._max_height_scatter.clear()
+        self._max_width_scatter.clear()
         self._axis_x.setRange(0, 200)
-        self._axis_y.setRange(0, 10)
-        self._min_y = float("inf")
-        self._max_y = -float("inf")
+        self._axis_y_height.setRange(0, self.HEIGHT_AXIS_MAX)
+        self._axis_y_width.setRange(0, self.WIDTH_AXIS_MAX)

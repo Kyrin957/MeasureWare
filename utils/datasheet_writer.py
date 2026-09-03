@@ -2,8 +2,8 @@
 
 Directory hierarchy: datasheets/YYYY/MM/<batch_number>.csv
 
-Each CSV includes per-point measured values along with baseline, upper/lower
-tolerances, and deviation — all rounded to 3 decimal places.
+Each CSV includes per-point height/width values along with the height/width
+upper limits and max values — all rounded to 3 decimal places.
 """
 
 import os
@@ -71,11 +71,11 @@ def save_session_to_datasheet(
     ----------
     session_summary : dict
         Return value of ``MeasurementSession.to_summary_dict()``.
-        Expected keys: ``batch_number``, ``baseline_value``,
-        ``tolerance_upper``, ``tolerance_lower``, ``judgment``.
+        Expected keys: ``batch_number``, ``spec_name``,
+        ``height_upper_limit``, ``width_upper_limit``, ``judgment``.
     points : list[dict]
         List of ``MeasurementPoint.to_dict()`` dicts, each with
-        ``point_index`` and ``measured_value``.
+        ``point_index``, ``height_value`` and ``width_value``.
     completed_at : datetime, optional
         Timestamp used for folder hierarchy and filename disambiguation.
         Defaults to ``datetime.now()``.
@@ -93,45 +93,45 @@ def save_session_to_datasheet(
         filepath = _build_filepath(batch_number, completed_at)
 
         # ---- Session-level fields (same for every row) ----
-        product_name = session_summary.get("product_name", "")
+        spec_name = session_summary.get("spec_name", "")
         inspection_seq = session_summary.get("inspection_sequence", "")
-        baseline = session_summary.get("baseline_value")
-        tol_upper = session_summary.get("tolerance_upper")
-        tol_lower = session_summary.get("tolerance_lower")
-        max_val = session_summary.get("max_measured_value")
+        height_limit = session_summary.get("height_upper_limit")
+        width_limit = session_summary.get("width_upper_limit")
+        max_height = session_summary.get("max_height_value")
+        max_width = session_summary.get("max_width_value")
+        width_enabled = bool(width_limit and width_limit > 0)
         judgment = session_summary.get("judgment", "--")
         started_at = session_summary.get("started_at", "")
 
         rows = []
         for pt in points:
-            measured = pt.get("measured_value")
-
-            # Deviation from baseline
-            deviation = None
-            if measured is not None and baseline is not None:
-                deviation = round(measured - baseline, 3)
+            height = pt.get("height_value")
+            width = pt.get("width_value")
 
             rows.append({
                 "批号": batch_number,
-                "品名": product_name,
+                "树脂规格要求": spec_name,
                 "检测序号": inspection_seq,
                 "点位序号": pt.get("point_index", ""),
-                "测量值(mm)": (
-                    round(measured, 3) if measured is not None else ""
+                "高度(mm)": (
+                    round(height, 3) if height is not None else ""
                 ),
-                "最大值(mm)": (
-                    round(max_val, 3) if max_val is not None else ""
+                "宽度(mm)": (
+                    round(width, 3) if width is not None else ""
                 ),
-                "基准值(mm)": (
-                    round(baseline, 3) if baseline is not None else ""
+                "高度最大值(mm)": (
+                    round(max_height, 3) if max_height is not None else ""
                 ),
-                "上公差(mm)": (
-                    round(tol_upper, 3) if tol_upper is not None else ""
+                "宽度最大值(mm)": (
+                    round(max_width, 3) if max_width is not None else ""
                 ),
-                "下公差(mm)": (
-                    round(tol_lower, 3) if tol_lower is not None else ""
+                "高度上限(mm)": (
+                    round(height_limit, 3) if height_limit is not None else ""
                 ),
-                "偏差(mm)": deviation if deviation is not None else "",
+                "宽度上限(mm)": (
+                    round(width_limit, 3) if width_limit is not None else ""
+                ),
+                "宽度检查": "是" if width_enabled else "否",
                 "判定": judgment,
                 "测量时间": started_at,
             })

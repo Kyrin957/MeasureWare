@@ -1,0 +1,39 @@
+2026-07-31 14:35:51 [INFO   ] config.logging_config: 日志系统初始化完成
+2026-07-31 14:35:51 [INFO   ] __main__: 数据库初始化完成
+2026-07-31 14:36:03 [INFO   ] __main__: 应用程序已启动
+2026-07-31 14:36:03 [INFO   ] GUI: __main__: 应用程序已启动
+2026-07-31 14:36:08 [INFO   ] GUI: 切换到仿真模式
+2026-07-31 14:36:14 [INFO   ] GUI: 测量任务 #25 已创建: 批号=6780, 品名=RWD, 基准值=0.8
+2026-07-31 14:36:14 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-31 14:36:14 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-31 14:36:14 [INFO   ] GUI: 开始测量 (仿真模式)
+2026-07-31 14:36:14 [INFO   ] GUI: 仿真: 正在连接设备...
+2026-07-31 14:36:15 [INFO   ] GUI: 设备已连接
+2026-07-31 14:36:15 [INFO   ] GUI: 仿真: 正在启动测量...
+2026-07-31 14:36:15 [INFO   ] GUI: 仿真: 正在采集数据...
+2026-07-31 14:36:24 [INFO   ] GUI: 正在停止测量...
+2026-07-31 14:36:24 [INFO   ] GUI: 仿真: 采集完成，共 19 个点位。
+2026-07-31 14:36:24 [INFO   ] GUI: 设备已断开
+2026-07-31 14:36:24 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-31 14:36:24 [INFO   ] GUI: 测量完成: 共 19 个点位, 最大值=5.142776, 判定=NG
+2026-07-31 14:36:24 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-31 14:36:24 [INFO   ] utils.datasheet_writer: 测量数据已保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\6780.csv
+2026-07-31 14:36:24 [INFO   ] GUI: utils.datasheet_writer: 测量数据已保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\6780.csv
+2026-07-31 14:36:24 [INFO   ] GUI: 测量数据已自动保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\6780.csv
+2026-07-31 14:36:43 [INFO   ] GUI: 测量任务 #26 已创建: 批号=6780, 品名=RWD, 基准值=0.8
+2026-07-31 14:36:43 [DEBUG  ] controllers.measurement_controller: 状态变更: IDLE -> READY
+2026-07-31 14:36:43 [DEBUG  ] controllers.measurement_controller: 状态变更: READY -> RUNNING
+2026-07-31 14:36:43 [INFO   ] GUI: 开始测量 (仿真模式)
+2026-07-31 14:36:43 [INFO   ] GUI: 仿真: 正在连接设备...
+2026-07-31 14:36:43 [INFO   ] GUI: 设备已连接
+2026-07-31 14:36:43 [INFO   ] GUI: 仿真: 正在启动测量...
+2026-07-31 14:36:43 [INFO   ] GUI: 仿真: 正在采集数据...
+2026-07-31 14:37:26 [INFO   ] GUI: 正在停止测量...
+2026-07-31 14:37:26 [INFO   ] GUI: 仿真: 采集完成，共 86 个点位。
+2026-07-31 14:37:26 [INFO   ] GUI: 设备已断开
+2026-07-31 14:37:26 [DEBUG  ] controllers.measurement_controller: 状态变更: RUNNING -> COMPLETING
+2026-07-31 14:37:26 [INFO   ] GUI: 测量完成: 共 86 个点位, 最大值=5.519172, 判定=NG
+2026-07-31 14:37:26 [DEBUG  ] controllers.measurement_controller: 状态变更: COMPLETING -> IDLE
+2026-07-31 14:37:26 [INFO   ] utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\6780.csv
+2026-07-31 14:37:26 [INFO   ] GUI: utils.datasheet_writer: 测量数据已追加到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\6780.csv
+2026-07-31 14:37:26 [INFO   ] GUI: 测量数据已自动保存到: d:\Project Files\ResinMonitor\MeasureWare\datasheets\2026\07\6780.csv
