@@ -1,6 +1,11 @@
 """Save measurement session data to local datasheets folder.
 
-Directory hierarchy: datasheets/YYYY/MM/<batch_number>.csv
+Directory hierarchy: datasheets/YYYY/MM/{OK|NG}/<batch_number>.csv
+
+Each completed product measurement is routed to the ``OK`` or ``NG`` folder
+based on the session-level ``judgment`` (the overall result of one product).
+Any judgment other than ``OK`` (i.e. ``NG`` and the undecided ``--``) goes to
+the ``NG`` folder.
 
 Each CSV includes per-point height/width values along with the height/width
 upper limits and max values — all rounded to 3 decimal places.
@@ -26,7 +31,10 @@ def _get_datasheet_root() -> str:
         datasheets/
             YYYY/
                 MM/
-                    batch_xxx.csv
+                    OK/
+                        batch_xxx.csv
+                    NG/
+                        batch_xxx.csv
     """
     import sys
 
@@ -39,18 +47,35 @@ def _get_datasheet_root() -> str:
         return os.path.join(project_root, "datasheets")
 
 
-def _build_filepath(batch_number: str, completed_at: datetime) -> str:
+def _judgment_folder(judgment: str | None) -> str:
+    """Map a session-level judgment to its result sub-folder name.
+
+    Only ``OK`` goes to the ``OK`` folder. Every other value — ``NG`` and the
+    undecided ``--`` (missing baseline or missing width data) — is routed to
+    the ``NG`` folder so that nothing escapes operator confirmation.
+    """
+    return "OK" if judgment == "OK" else "NG"
+
+
+def _build_filepath(
+    batch_number: str,
+    completed_at: datetime,
+    judgment: str | None = None,
+) -> str:
     """Build the absolute file path for a datasheet CSV.
 
-    Creates intermediate directories (year/month) as needed.
+    Creates intermediate directories (year/month/OK|NG) as needed.
 
-    All measurements of the same batch share one file — no suffix is
-    appended; later writes append rows.
+    The ``judgment`` of one completed product decides whether the file lands
+    under ``OK/`` or ``NG/``. All measurements of the same batch share one file
+    — no suffix is appended; later writes append rows.
     """
     base = _get_datasheet_root()
     year_dir = completed_at.strftime("%Y")
     month_dir = completed_at.strftime("%m")
-    dir_path = os.path.join(base, year_dir, month_dir)
+    dir_path = os.path.join(
+        base, year_dir, month_dir, _judgment_folder(judgment)
+    )
     os.makedirs(dir_path, exist_ok=True)
 
     # Sanitize batch number for use as a filename
@@ -67,6 +92,10 @@ def save_session_to_datasheet(
 ) -> str | None:
     """Save a completed measurement session to the local datasheets folder.
 
+    The file is routed to ``datasheets/YYYY/MM/OK/<batch>.csv`` or
+    ``datasheets/YYYY/MM/NG/<batch>.csv`` according to the session-level
+    ``judgment``.
+
     Parameters
     ----------
     session_summary : dict
@@ -77,7 +106,7 @@ def save_session_to_datasheet(
         List of ``MeasurementPoint.to_dict()`` dicts, each with
         ``point_index``, ``height_value`` and ``width_value``.
     completed_at : datetime, optional
-        Timestamp used for folder hierarchy and filename disambiguation.
+        Timestamp used for the YYYY/MM folder hierarchy.
         Defaults to ``datetime.now()``.
 
     Returns
@@ -89,10 +118,12 @@ def save_session_to_datasheet(
         completed_at = datetime.now()
 
     try:
-        batch_number = session_summary.get("batch_number", "unknown_batch")
-        filepath = _build_filepath(batch_number, completed_at)
-
         # ---- Session-level fields (same for every row) ----
+        judgment = session_summary.get("judgment", "--")
+
+        batch_number = session_summary.get("batch_number", "unknown_batch")
+        filepath = _build_filepath(batch_number, completed_at, judgment)
+
         spec_name = session_summary.get("spec_name", "")
         inspection_seq = session_summary.get("inspection_sequence", "")
         height_limit = session_summary.get("height_upper_limit")
@@ -100,7 +131,6 @@ def save_session_to_datasheet(
         max_height = session_summary.get("max_height_value")
         max_width = session_summary.get("max_width_value")
         width_enabled = bool(width_limit and width_limit > 0)
-        judgment = session_summary.get("judgment", "--")
         started_at = session_summary.get("started_at", "")
 
         rows = []

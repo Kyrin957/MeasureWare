@@ -41,7 +41,10 @@ D:\ResinMeasureWare\
 └── datasheets\             ← （自动创建）导出数据目录
     └── YYYY\
         └── MM\
-            └── batch_xxx.csv
+            ├── OK\
+            │   └── batch_xxx.csv
+            └── NG\
+                └── batch_xxx.csv
 ```
 
 **部署只需 `ResinMeasureWare.exe` 这一个文件**，其余目录和文件均由程序自动创建。

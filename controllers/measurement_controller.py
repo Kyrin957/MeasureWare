@@ -276,7 +276,8 @@ class MeasurementController(QObject):
     def _save_datasheet(self, summary: dict):
         """Persist completed session data to the local datasheets folder.
 
-        The CSV is written under ``datasheets/YYYY/MM/<batch_number>.csv``.
+        The CSV is written under ``datasheets/YYYY/MM/{OK|NG}/<batch>.csv``,
+        routed by the session-level judgment.
         Failure to save does **not** affect the measurement workflow — errors
         are logged and silently ignored.
         """
